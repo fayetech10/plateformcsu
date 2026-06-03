@@ -212,18 +212,15 @@ export class EnrolementListComponent implements OnInit {
       },
       error: () => {
         this.loading = false;
-        // Mock fallback data
-        this.enrolements = this.getMockEnrolements().filter(e => {
-          if (statut && e.statut !== statut) return false;
-          if (search) {
-            const query = search.toLowerCase();
-            return e.numeroBeneficiaire.toLowerCase().includes(query) || 
-                   (e.patient && (e.patient.nom.toLowerCase().includes(query) || e.patient.prenom.toLowerCase().includes(query)));
-          }
-          return true;
+        this.enrolements = [];
+        this.totalElements = 0;
+        this.totalPages = 0;
+        Swal.fire({
+          title: 'Erreur',
+          text: 'Impossible de charger les enrôlements. Veuillez vérifier votre connexion au serveur.',
+          icon: 'error',
+          confirmButtonColor: '#10b981'
         });
-        this.totalElements = this.enrolements.length;
-        this.totalPages = Math.ceil(this.enrolements.length / this.size) || 1;
       }
     });
   }
@@ -281,20 +278,27 @@ export class EnrolementListComponent implements OnInit {
       showCancelButton: true,
       confirmButtonText: 'Enregistrer',
       cancelButtonText: 'Annuler',
-      confirmButtonColor: newStatut === 'VALIDE' ? '#43A047' : '#E53935',
-      cancelButtonColor: '#6c757d'
+      confirmButtonColor: newStatut === 'VALIDE' ? '#10b981' : '#ef4444',
+      cancelButtonColor: '#64748b'
     }).then((result) => {
       if (result.isConfirmed) {
         this.enrolementService.updateStatus(enr.id!, newStatut, result.value).subscribe({
           next: () => {
-            Swal.fire('Succès !', "Le statut de l'enrôlement a été mis à jour.", 'success');
+            Swal.fire({
+              title: 'Succès !',
+              text: "Le statut de l'enrôlement a été mis à jour.",
+              icon: 'success',
+              confirmButtonColor: '#10b981'
+            });
             this.loadEnrolements();
           },
           error: () => {
-            // Mock simulation
-            enr.statut = newStatut;
-            enr.observations = result.value || 'Traité via simulation.';
-            Swal.fire('Succès !', "Le statut a été mis à jour (Simulation).", 'success');
+            Swal.fire({
+              title: 'Erreur',
+              text: 'Une erreur est survenue lors de la mise à jour du statut.',
+              icon: 'error',
+              confirmButtonColor: '#10b981'
+            });
           }
         });
       }
@@ -315,51 +319,7 @@ export class EnrolementListComponent implements OnInit {
         </div>
       `,
       confirmButtonText: 'Fermer',
-      confirmButtonColor: '#00875A'
+      confirmButtonColor: '#10b981'
     });
-  }
-
-  private getMockEnrolements(): Enrolement[] {
-    return [
-      {
-        id: 1,
-        numeroBeneficiaire: 'BEN-2026-9812',
-        patientId: 1,
-        dateEnrolement: '2026-05-15',
-        statut: 'VALIDE',
-        agentId: 1,
-        agentNom: 'Amina Diop',
-        observations: 'Adhésion validée après réception de la cotisation trimestrielle.',
-        bureauCsuId: 1,
-        bureauCsuNom: 'Dakar Centre',
-        patient: { id: 1, numeroDossier: 'DOS-2026-0001', prenom: 'Moussa', nom: 'Diop', sexe: 'M', dateNaissance: '1985-05-12', telephone: '776543210', adresse: 'Medina', region: 'Dakar', departement: 'Dakar', commune: 'Medina' }
-      },
-      {
-        id: 2,
-        numeroBeneficiaire: 'BEN-2026-0421',
-        patientId: 2,
-        dateEnrolement: '2026-05-16',
-        statut: 'EN_COURS',
-        agentId: 1,
-        agentNom: 'Amina Diop',
-        observations: 'En attente de la pièce d\'identité scannée.',
-        bureauCsuId: 2,
-        bureauCsuNom: 'Mbour Littoral',
-        patient: { id: 2, numeroDossier: 'DOS-2026-0002', prenom: 'Fatou', nom: 'Ndiaye', sexe: 'F', dateNaissance: '1992-09-24', telephone: '781234567', adresse: 'Saly', region: 'Thiès', departement: 'Mbour', commune: 'Saly' }
-      },
-      {
-        id: 3,
-        numeroBeneficiaire: 'BEN-2026-1192',
-        patientId: 3,
-        dateEnrolement: '2026-05-17',
-        statut: 'REJETE',
-        agentId: 2,
-        agentNom: 'Idrissa Diallo',
-        observations: 'Rejeté car déjà affilié à l\'IPM (Régime obligatoire incompatible).',
-        bureauCsuId: 3,
-        bureauCsuNom: 'Mbacké Baol',
-        patient: { id: 3, numeroDossier: 'DOS-2026-0003', prenom: 'Abdoulaye', nom: 'Sow', sexe: 'M', dateNaissance: '1978-01-30', telephone: '765432109', adresse: 'Mbacke', region: 'Diourbel', departement: 'Mbacke', commune: 'Mbacke' }
-      }
-    ];
   }
 }

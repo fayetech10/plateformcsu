@@ -322,23 +322,16 @@ export class UtilisateurFormComponent implements OnInit {
       next: (data) => {
         this.bureaux = data;
       },
-      error: () => {
-        // Fallback mock
-        this.bureaux = [
-          { id: 1, nom: 'Dakar Centre', code: 'DKR-01', region: 'Dakar', departement: 'Dakar', commune: 'Medina', adresse: '', telephone: '', actif: true },
-          { id: 2, nom: 'Mbour Littoral', code: 'MBR-02', region: 'Thiès', departement: 'Mbour', commune: 'Saly', adresse: '', telephone: '', actif: true }
-        ];
+      error: (err) => {
+        console.error('Erreur lors du chargement des bureaux:', err);
+        this.bureaux = [];
       }
     });
   }
 
   loadStructures(): void {
-    // Mock data for structures
-    this.structures = [
-      { id: 10, nom: 'Structure de Santé Alpha' },
-      { id: 11, nom: 'Hôpital Général Beta' },
-      { id: 12, nom: 'Clinique Gamma' }
-    ];
+    // TODO: Replace with real API call when structure service is available
+    this.structures = [];
   }
 
   loadUserData(id: number): void {
@@ -346,16 +339,10 @@ export class UtilisateurFormComponent implements OnInit {
       next: (u) => {
         this.fillForm(u);
       },
-      error: () => {
-        // Mock fallback
-        const mockList = [
-          { id: 1, username: 'admin', nom: 'Gueye', prenom: 'Amadou', email: 'admin@csu.sn', telephone: '775556677', role: 'ADMIN', actif: true, bureauCsuId: 1, structureId: 10 },
-          { id: 2, username: 'supervisor1', nom: 'Diop', prenom: 'Mariama', email: 'm.diop@csu.sn', telephone: '782223344', role: 'SUPERVISEUR', actif: true, bureauCsuId: 2, structureId: 11 }
-        ];
-        const mock = mockList.find(usr => usr.id === id);
-        if (mock) {
-          this.fillForm(mock as any);
-        }
+      error: (err) => {
+        console.error('Erreur lors du chargement de l\'utilisateur:', err);
+        Swal.fire('Erreur', 'Impossible de charger l\'utilisateur.', 'error');
+        this.router.navigate(['/admin/utilisateurs']);
       }
     });
   }

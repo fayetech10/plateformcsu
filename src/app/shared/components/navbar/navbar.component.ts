@@ -91,8 +91,8 @@ export class NavbarComponent {
       showCancelButton: true,
       confirmButtonText: 'Oui, déconnexion',
       cancelButtonText: 'Annuler',
-      confirmButtonColor: '#E53935',
-      cancelButtonColor: '#6c757d'
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#64748b'
     }).then((result) => {
       if (result.isConfirmed) {
         this.authService.logout();

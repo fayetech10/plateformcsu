@@ -259,19 +259,10 @@ export class EnrolementFormComponent implements OnInit {
         this.searchResults = res.content;
         this.loadingSearch = false;
       },
-      error: () => {
+      error: (err) => {
         this.loadingSearch = false;
-        // Mock fallback search
-        if (this.searchQuery.length >= 2) {
-          const query = this.searchQuery.toLowerCase();
-          this.searchResults = this.getMockPatients().filter(
-            p => p.nom.toLowerCase().includes(query) || 
-                 p.prenom.toLowerCase().includes(query) || 
-                 p.numeroDossier.toLowerCase().includes(query)
-          );
-        } else {
-          this.searchResults = [];
-        }
+        console.error('Erreur lors de la recherche de patients:', err);
+        this.searchResults = [];
       }
     });
   }
@@ -286,11 +277,8 @@ export class EnrolementFormComponent implements OnInit {
       next: (patient) => {
         this.selectPatient(patient);
       },
-      error: () => {
-        const mock = this.getMockPatients().find(p => p.id === id);
-        if (mock) {
-          this.selectPatient(mock);
-        }
+      error: (err) => {
+        console.error('Erreur lors du chargement du patient:', err);
       }
     });
   }
@@ -350,10 +338,5 @@ export class EnrolementFormComponent implements OnInit {
     });
   }
 
-  private getMockPatients(): Patient[] {
-    return [
-      { id: 1, numeroDossier: 'DOS-2026-0001', prenom: 'Moussa', nom: 'Diop', sexe: 'M', dateNaissance: '1985-05-12', telephone: '776543210', adresse: 'Medina', region: 'Dakar', departement: 'Dakar', commune: 'Medina' },
-      { id: 2, numeroDossier: 'DOS-2026-0002', prenom: 'Fatou', nom: 'Ndiaye', sexe: 'F', dateNaissance: '1992-09-24', telephone: '781234567', adresse: 'Saly', region: 'Thiès', departement: 'Mbour', commune: 'Saly' }
-    ];
-  }
+
 }

@@ -200,18 +200,15 @@ export class ActiviteListComponent implements OnInit {
       },
       error: () => {
         this.loading = false;
-        // Mock fallback data
-        this.activites = this.getMockActivites().filter(a => {
-          if (typeActivite && a.typeActivite !== typeActivite) return false;
-          if (search) {
-            const query = search.toLowerCase();
-            return a.description.toLowerCase().includes(query) || 
-                   (a.commentaires && a.commentaires.toLowerCase().includes(query));
-          }
-          return true;
+        this.activites = [];
+        this.totalElements = 0;
+        this.totalPages = 0;
+        Swal.fire({
+          title: 'Erreur',
+          text: 'Impossible de charger les activités. Veuillez vérifier votre connexion au serveur.',
+          icon: 'error',
+          confirmButtonColor: '#10b981'
         });
-        this.totalElements = this.activites.length;
-        this.totalPages = Math.ceil(this.activites.length / this.size) || 1;
       }
     });
   }
@@ -262,31 +259,30 @@ export class ActiviteListComponent implements OnInit {
       showCancelButton: true,
       confirmButtonText: 'Oui, supprimer',
       cancelButtonText: 'Annuler',
-      confirmButtonColor: '#E53935',
-      cancelButtonColor: '#6c757d'
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#64748b'
     }).then((result) => {
       if (result.isConfirmed) {
         this.activiteService.deleteActivite(act.id!).subscribe({
           next: () => {
-            Swal.fire('Supprimée !', "L'activité a été supprimée.", 'success');
+            Swal.fire({
+              title: 'Supprimée !',
+              text: "L'activité a été supprimée.",
+              icon: 'success',
+              confirmButtonColor: '#10b981'
+            });
             this.loadActivites();
           },
           error: () => {
-            // Mock delete simulation
-            this.activites = this.activites.filter(a => a.id !== act.id);
-            this.totalElements = this.activites.length;
-            Swal.fire('Supprimée !', "L'activité a été supprimée (Simulation).", 'success');
+            Swal.fire({
+              title: 'Erreur',
+              text: 'Une erreur est survenue lors de la suppression de l\'activité.',
+              icon: 'error',
+              confirmButtonColor: '#10b981'
+            });
           }
         });
       }
     });
-  }
-
-  private getMockActivites(): Activite[] {
-    return [
-      { id: 1, typeActivite: 'SENSIBILISATION', description: 'Caravane de sensibilisation sur la CSU au marché de Rufisque', dateActivite: '2026-05-18', agentNom: 'Moussa Ndiaye', nombreParticipants: 120, bureauCsuNom: 'Rufisque Est', categorieNom: 'Caravanes Marchés' },
-      { id: 2, typeActivite: 'FORMATION', description: 'Atelier de renforcement des capacités des enrôleurs locaux', dateActivite: '2026-05-20', agentNom: 'Sokhna Wade', nombreParticipants: 15, bureauCsuNom: 'Thiès Ouest', categorieNom: 'Ateliers Techniques' },
-      { id: 3, typeActivite: 'REUNION', description: 'Comité de pilotage régional de la CSU', dateActivite: '2026-05-22', agentNom: 'Papa Diop', nombreParticipants: 8, bureauCsuNom: 'Dakar Centre', categorieNom: 'Instances Décisionnelles' }
-    ];
   }
 }

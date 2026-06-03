@@ -467,25 +467,20 @@ export class DashboardComponent implements OnInit, AfterViewInit {
       next: (data) => {
         this.stats = data;
       },
-      error: () => {
-        // Fallback mock stats if backend is not running yet
+      error: (err) => {
+        console.error('Erreur chargement dashboard:', err);
         this.stats = {
-          totalPatients: 243,
-          totalBeneficiaires: 187,
-          totalActivites: 32,
-          totalConstats: 15,
-          activitesDuJour: [
-            { id: 1, typeActivite: 'SENSIBILISATION', description: 'Sensibilisation au marché central', date: '09:00', agent: 'Agent CSU' },
-            { id: 2, typeActivite: 'FORMATION', description: 'Formation des nouveaux enrôleurs', date: '11:30', agent: 'Agent CSU' },
-            { id: 3, typeActivite: 'REUNION', description: 'Réunion de coordination hebdomadaire', date: '14:00', agent: 'Superviseur' }
-          ],
+          totalPatients: 0,
+          totalBeneficiaires: 0,
+          totalActivites: 0,
+          totalConstats: 0,
+          activitesDuJour: [],
           statistiquesMensuelles: {
-            labels: ['Janv', 'Févr', 'Mars', 'Avril', 'Mai', 'Juin', 'Juil', 'Août', 'Sept', 'Oct', 'Nov', 'Déc'],
-            patients: [15, 20, 25, 30, 45, 55, 60, 65, 75, 80, 95, 110],
-            enrolements: [10, 15, 18, 22, 35, 42, 48, 50, 60, 65, 80, 90]
+            labels: [],
+            patients: [],
+            enrolements: []
           }
         };
-        // Re-render chart since data changed
         this.renderChart();
       }
     });

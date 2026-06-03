@@ -330,6 +330,51 @@ interface RegionData {
                 </div>
               }
 
+              <!-- Section Spécifique : 0 à 5 ans -->
+              @if (patientType === '0-5ans') {
+                <h4 class="mb-4 text-csu-secondary">
+                  <i class="bi bi-file-medical me-2"></i> Informations Médicales (0 à 5 ans)
+                </h4>
+                <div class="row g-3 mb-4 animate-fade-in">
+                  <div class="col-12 col-md-6">
+                    <div class="csu-form-group">
+                      <label class="csu-form-label" for="numeroRegistre">Numéro de Registre</label>
+                      <input id="numeroRegistre" type="text" class="csu-form-control" formControlName="numeroRegistre" placeholder="Ex: REG-2024-001" />
+                    </div>
+                  </div>
+                  <div class="col-12 col-md-6">
+                    <div class="csu-form-group">
+                      <label class="csu-form-label" for="matriculeExtraitAccompagnant">N° Matricule / Extrait / Accompagnant</label>
+                      <input id="matriculeExtraitAccompagnant" type="text" class="csu-form-control" formControlName="matriculeExtraitAccompagnant" placeholder="N° d'identification" />
+                    </div>
+                  </div>
+                  <div class="col-12 col-md-6">
+                    <div class="csu-form-group">
+                      <label class="csu-form-label" for="datePriseEnCharge">Date de Prise en Charge</label>
+                      <input id="datePriseEnCharge" type="date" class="csu-form-control" formControlName="datePriseEnCharge" />
+                    </div>
+                  </div>
+                  <div class="col-12 col-md-6">
+                    <div class="csu-form-group">
+                      <label class="csu-form-label" for="service">Service</label>
+                      <input id="service" type="text" class="csu-form-control" formControlName="service" placeholder="Service médical" />
+                    </div>
+                  </div>
+                  <div class="col-12 col-md-6">
+                    <div class="csu-form-group">
+                      <label class="csu-form-label" for="prestationMedicament">Prestation et Médicament</label>
+                      <textarea id="prestationMedicament" rows="2" class="csu-form-control" formControlName="prestationMedicament" placeholder="Détails de la prestation..."></textarea>
+                    </div>
+                  </div>
+                  <div class="col-12 col-md-6">
+                    <div class="csu-form-group">
+                      <label class="csu-form-label" for="diagnosticMotif">Diagnostic / Motif de consultation</label>
+                      <textarea id="diagnosticMotif" rows="2" class="csu-form-control" formControlName="diagnosticMotif" placeholder="Motif de la visite..."></textarea>
+                    </div>
+                  </div>
+                </div>
+              }
+
               <!-- Action buttons -->
               <div class="d-flex justify-content-end gap-3 border-top pt-4">
                 <button type="button" routerLink="/patients" class="csu-btn csu-btn-light">
@@ -564,7 +609,13 @@ export class PatientFormComponent implements OnInit {
     commune: [{ value: '', disabled: true }, [Validators.required]],
     adresse: ['', [Validators.required]],
     photoIdentiteRecto: [''],
-    photoIdentiteVerso: ['']
+    photoIdentiteVerso: [''],
+    numeroRegistre: [''],
+    matriculeExtraitAccompagnant: [''],
+    datePriseEnCharge: [''],
+    service: [''],
+    prestationMedicament: [''],
+    diagnosticMotif: ['']
   });
 
   ngOnInit(): void {
@@ -600,15 +651,10 @@ export class PatientFormComponent implements OnInit {
       next: (patient) => {
         this.fillFormWithPatient(patient);
       },
-      error: () => {
-        // Mock fallback if offline
-        const mock = this.getMockPatients().find(p => p.id === id);
-        if (mock) {
-          this.fillFormWithPatient(mock);
-        } else {
-          Swal.fire('Erreur', 'Impossible de charger le patient.', 'error');
-          this.router.navigate(['/patients']);
-        }
+      error: (err) => {
+        console.error('Erreur lors du chargement du patient:', err);
+        Swal.fire('Erreur', 'Impossible de charger le patient.', 'error');
+        this.router.navigate(['/patients']);
       }
     });
   }
@@ -636,7 +682,13 @@ export class PatientFormComponent implements OnInit {
       commune: patient.commune,
       adresse: patient.adresse,
       photoIdentiteRecto: patient.photoIdentiteRecto || '',
-      photoIdentiteVerso: patient.photoIdentiteVerso || ''
+      photoIdentiteVerso: patient.photoIdentiteVerso || '',
+      numeroRegistre: patient.numeroRegistre || '',
+      matriculeExtraitAccompagnant: patient.matriculeExtraitAccompagnant || '',
+      datePriseEnCharge: patient.datePriseEnCharge ? patient.datePriseEnCharge.split('T')[0] : '',
+      service: patient.service || '',
+      prestationMedicament: patient.prestationMedicament || '',
+      diagnosticMotif: patient.diagnosticMotif || ''
     });
 
     this.photoRectoUrl = patient.photoIdentiteRecto || null;
@@ -872,10 +924,5 @@ export class PatientFormComponent implements OnInit {
     }
   }
 
-  private getMockPatients(): any[] {
-    return [
-      { id: 1, numeroDossier: 'DOS-2026-0001', prenom: 'Moussa', nom: 'Diop', sexe: 'M', dateNaissance: '1985-05-12', telephone: '776543210', adresse: 'Medina Rue 15', region: 'Dakar', departement: 'Dakar', commune: 'Medina', dateEnregistrement: '2026-05-15T09:00:00Z' },
-      { id: 2, numeroDossier: 'DOS-2026-0002', prenom: 'Fatou', nom: 'Ndiaye', sexe: 'F', dateNaissance: '1992-09-24', telephone: '781234567', adresse: 'Saly Port', region: 'Thiès', departement: 'Mbour', commune: 'Saly', dateEnregistrement: '2026-05-16T10:30:00Z' }
-    ];
-  }
+
 }

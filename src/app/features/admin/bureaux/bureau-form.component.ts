@@ -327,16 +327,10 @@ export class BureauFormComponent implements OnInit {
       next: (b) => {
         this.fillForm(b);
       },
-      error: () => {
-        // Mock fallback
-        const mockList = [
-          { id: 1, nom: 'Dakar Centre', code: 'DKR-01', region: 'Dakar', departement: 'Dakar', commune: 'Medina', adresse: 'Rue 15 angle 18', telephone: '338210011', actif: true },
-          { id: 2, nom: 'Mbour Littoral', code: 'MBR-02', region: 'Thiès', departement: 'Mbour', commune: 'Saly', adresse: 'Saly Port, route de Mbour', telephone: '339572233', actif: true }
-        ];
-        const mock = mockList.find(bur => bur.id === id);
-        if (mock) {
-          this.fillForm(mock);
-        }
+      error: (err) => {
+        console.error('Erreur lors du chargement du bureau:', err);
+        Swal.fire('Erreur', 'Impossible de charger le bureau.', 'error');
+        this.router.navigate(['/admin/bureaux']);
       }
     });
   }

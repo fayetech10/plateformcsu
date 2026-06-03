@@ -292,14 +292,9 @@ export class ConstatFormComponent implements OnInit {
       next: (data) => {
         this.categories = data;
       },
-      error: () => {
-        // Fallback mock categories
-        this.categories = [
-          { id: 1, nom: 'Matériel', description: '', actif: true },
-          { id: 2, nom: 'Logiciel', description: '', actif: true },
-          { id: 3, nom: 'Infrastructure', description: '', actif: true },
-          { id: 4, nom: 'Logistique', description: '', actif: true }
-        ];
+      error: (err) => {
+        console.error('Erreur lors du chargement des catégories:', err);
+        this.categories = [];
       }
     });
   }
@@ -309,15 +304,10 @@ export class ConstatFormComponent implements OnInit {
       next: (data) => {
         this.fillForm(data);
       },
-      error: () => {
-        // Fallback mock
-        const mockList = [
-          { id: 1, referenceConstat: 'CST-2026-0001', dateConstat: '2026-05-10', description: 'Dysfonctionnement de l\'imprimante de cartes d\'adhésion au bureau local.', priorite: 'HAUTE', statut: 'OUVERT', archive: false, bureauCsuId: 1, categorieId: 1 }
-        ];
-        const mock = mockList.find(c => c.id === id);
-        if (mock) {
-          this.fillForm(mock as any);
-        }
+      error: (err) => {
+        console.error('Erreur lors du chargement du constat:', err);
+        Swal.fire('Erreur', 'Impossible de charger le constat.', 'error');
+        this.router.navigate(['/constats']);
       }
     });
   }

@@ -89,11 +89,11 @@ import Swal from 'sweetalert2';
               <tr>
                 <th>N° Dossier</th>
                 <th>Prénom & Nom</th>
+                <th>Catégorie</th>
                 <th>Sexe</th>
-                <th>Date Naissance</th>
+                <th>Âge / Né(e) le</th>
                 <th>Téléphone</th>
                 <th>Région</th>
-                <th>Date d'Enr.</th>
                 <th class="text-end">Actions</th>
               </tr>
             </thead>
@@ -105,14 +105,18 @@ import Swal from 'sweetalert2';
                   </td>
                   <td>{{ p.prenom }} {{ p.nom }}</td>
                   <td>
+                    <span class="csu-badge font-semibold" [ngClass]="getCategoryBadgeClass(p)">
+                      {{ getCategoryLabel(p) }}
+                    </span>
+                  </td>
+                  <td>
                     <span class="badge" [class.bg-info]="p.sexe === 'M'" [class.bg-danger]="p.sexe === 'F'">
                       {{ p.sexe === 'M' ? 'Masculin' : 'Féminin' }}
                     </span>
                   </td>
-                  <td>{{ p.dateNaissance | date:'dd/MM/yyyy' }}</td>
+                  <td>{{ calculateAge(p.dateNaissance) }} ans <span class="text-muted small">({{ p.dateNaissance | date:'dd/MM/yyyy' }})</span></td>
                   <td>{{ p.telephone || '-' }}</td>
                   <td>{{ p.region }}</td>
-                  <td>{{ p.dateEnregistrement | date:'dd/MM/yyyy' }}</td>
                   <td class="text-end">
                     <div class="d-inline-flex gap-2">
                       <a [routerLink]="['/patients', p.id]" class="csu-btn-icon" title="Consulter la fiche">
@@ -202,20 +206,15 @@ export class PatientListComponent implements OnInit {
       },
       error: () => {
         this.loading = false;
-        // Fallback mock data when backend is not running yet
-        this.patients = this.getMockPatients().filter(p => {
-          if (sexe && p.sexe !== sexe) return false;
-          if (region && p.region !== region) return false;
-          if (search) {
-            const query = search.toLowerCase();
-            return p.nom.toLowerCase().includes(query) || 
-                   p.prenom.toLowerCase().includes(query) || 
-                   p.numeroDossier.toLowerCase().includes(query);
-          }
-          return true;
+        this.patients = [];
+        this.totalElements = 0;
+        this.totalPages = 0;
+        Swal.fire({
+          title: 'Erreur',
+          text: 'Impossible de charger les patients. Veuillez vérifier votre connexion au serveur.',
+          icon: 'error',
+          confirmButtonColor: '#10b981'
         });
-        this.totalElements = this.patients.length;
-        this.totalPages = Math.ceil(this.patients.length / this.size) || 1;
       }
     });
   }
@@ -258,33 +257,62 @@ export class PatientListComponent implements OnInit {
       showCancelButton: true,
       confirmButtonText: 'Oui, supprimer',
       cancelButtonText: 'Annuler',
-      confirmButtonColor: '#E53935',
-      cancelButtonColor: '#6c757d'
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#64748b'
     }).then((result) => {
       if (result.isConfirmed) {
         this.patientService.deletePatient(patient.id!).subscribe({
           next: () => {
-            Swal.fire('Supprimé !', 'Le patient a été supprimé avec succès.', 'success');
+            Swal.fire({
+              title: 'Supprimé !',
+              text: 'Le patient a été supprimé avec succès.',
+              icon: 'success',
+              confirmButtonColor: '#10b981'
+            });
             this.loadPatients();
           },
           error: () => {
-            // Delete simulation for mock fallback
-            this.patients = this.patients.filter(p => p.id !== patient.id);
-            this.totalElements = this.patients.length;
-            Swal.fire('Supprimé !', 'Le patient a été supprimé (Simulation).', 'success');
+            Swal.fire({
+              title: 'Erreur',
+              text: 'Une erreur est survenue lors de la suppression du patient.',
+              icon: 'error',
+              confirmButtonColor: '#10b981'
+            });
           }
         });
       }
     });
   }
 
-  private getMockPatients(): Patient[] {
-    return [
-      { id: 1, numeroDossier: 'DOS-2026-0001', prenom: 'Moussa', nom: 'Diop', sexe: 'M', dateNaissance: '1985-05-12', telephone: '776543210', adresse: 'Medina', region: 'Dakar', departement: 'Dakar', commune: 'Medina', dateEnregistrement: '2026-05-15T09:00:00Z' },
-      { id: 2, numeroDossier: 'DOS-2026-0002', prenom: 'Fatou', nom: 'Ndiaye', sexe: 'F', dateNaissance: '1992-09-24', telephone: '781234567', adresse: 'Saly', region: 'Thiès', departement: 'Mbour', commune: 'Saly', dateEnregistrement: '2026-05-16T10:30:00Z' },
-      { id: 3, numeroDossier: 'DOS-2026-0003', prenom: 'Abdoulaye', nom: 'Sow', sexe: 'M', dateNaissance: '1978-01-30', telephone: '765432109', adresse: 'Mbacke', region: 'Diourbel', departement: 'Mbacke', commune: 'Mbacke', dateEnregistrement: '2026-05-17T11:00:00Z' },
-      { id: 4, numeroDossier: 'DOS-2026-0004', prenom: 'Awa', nom: 'Fall', sexe: 'F', dateNaissance: '2000-11-05', telephone: '771122334', adresse: 'Golf Sud', region: 'Dakar', departement: 'Guediawaye', commune: 'Golf Sud', dateEnregistrement: '2026-05-18T14:20:00Z' },
-      { id: 5, numeroDossier: 'DOS-2026-0005', prenom: 'Ousmane', nom: 'Gueye', sexe: 'M', dateNaissance: '1965-07-18', telephone: '708899001', adresse: 'Thies Ouest', region: 'Thiès', departement: 'Thies', commune: 'Thies Ouest', dateEnregistrement: '2026-05-19T16:45:00Z' }
-    ];
+  calculateAge(dateString: string): number {
+    if (!dateString) return 0;
+    const today = new Date();
+    const birthDate = new Date(dateString);
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age;
+  }
+
+  getCategoryLabel(patient: Patient): string {
+    const age = this.calculateAge(patient.dateNaissance);
+    if (age <= 5) return '0 à 5 ans';
+    if (age >= 60) return 'Plan Sésame';
+    if (patient.photoIdentiteRecto || patient.photoIdentiteVerso) return 'Classique';
+    if (patient.sexe === 'F') return 'Césarienne';
+    return 'Autre';
+  }
+
+  getCategoryBadgeClass(patient: Patient): string {
+    const cat = this.getCategoryLabel(patient);
+    switch (cat) {
+      case '0 à 5 ans': return 'csu-badge-primary';
+      case 'Plan Sésame': return 'csu-badge-warning';
+      case 'Classique': return 'csu-badge-success';
+      case 'Césarienne': return 'csu-badge-danger';
+      default: return 'csu-badge-secondary';
+    }
   }
 }

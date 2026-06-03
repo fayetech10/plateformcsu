@@ -232,14 +232,9 @@ export class ActiviteFormComponent implements OnInit {
       next: (data) => {
         this.categories = data;
       },
-      error: () => {
-        // Fallback mock categories
-        this.categories = [
-          { id: 1, nom: 'Caravanes Marchés', description: '', actif: true },
-          { id: 2, nom: 'Ateliers Techniques', description: '', actif: true },
-          { id: 3, nom: 'Instances Décisionnelles', description: '', actif: true },
-          { id: 4, nom: 'Visites de Proximité', description: '', actif: true }
-        ];
+      error: (err) => {
+        console.error('Erreur lors du chargement des catégories:', err);
+        this.categories = [];
       }
     });
   }
@@ -249,15 +244,10 @@ export class ActiviteFormComponent implements OnInit {
       next: (data) => {
         this.fillForm(data);
       },
-      error: () => {
-        // Mock fallback
-        const mockList = [
-          { id: 1, typeActivite: 'SENSIBILISATION', description: 'Caravane de sensibilisation sur la CSU au marché de Rufisque', dateActivite: '2026-05-18', agentNom: 'Moussa Ndiaye', nombreParticipants: 120, bureauCsuNom: 'Rufisque Est', categorieId: 1, commentaires: '' }
-        ];
-        const mock = mockList.find(a => a.id === id);
-        if (mock) {
-          this.fillForm(mock as any);
-        }
+      error: (err) => {
+        console.error('Erreur lors du chargement de l\'activité:', err);
+        Swal.fire('Erreur', 'Impossible de charger l\'activité.', 'error');
+        this.router.navigate(['/activites']);
       }
     });
   }

@@ -73,37 +73,7 @@ export class AuthService {
   }
 
   login(credentials: LoginRequest): Observable<LoginResponse> {
-    // FAKE AUTHENTICATION FOR DEVELOPMENT
-    const fakePayload = {
-      sub: credentials.username,
-      role: credentials.username === 'admin' ? 'ADMIN' : 'AGENT',
-      nom: 'Admin',
-      prenom: 'Test',
-      agent_id: credentials.username === 'admin' ? 999 : 101,
-      bureau_id: credentials.username === 'admin' ? undefined : 1,
-      structure_id: credentials.username === 'admin' ? undefined : 10,
-      bureauCsuNom: 'Bureau Central',
-      exp: Math.floor(Date.now() / 1000) + (60 * 60 * 24) // 1 day validity
-    };
-    
-    // Create a fake JWT token structure (header.payload.signature)
-    const fakeToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.' + 
-                      btoa(JSON.stringify(fakePayload)) + 
-                      '.fake_signature_for_dev';
-
-    const response: LoginResponse = {
-      token: fakeToken,
-      username: fakePayload.sub,
-      role: fakePayload.role,
-      nom: fakePayload.nom,
-      prenom: fakePayload.prenom,
-      agent_id: fakePayload.agent_id,
-      bureau_id: fakePayload.bureau_id,
-      structure_id: fakePayload.structure_id,
-      bureauCsuNom: fakePayload.bureauCsuNom
-    };
-
-    return of(response).pipe(
+    return this.http.post<LoginResponse>(`${this.apiUrl}/login`, credentials).pipe(
       tap(res => {
         if (isPlatformBrowser(this.platformId)) {
           localStorage.setItem('csu_token', res.token);

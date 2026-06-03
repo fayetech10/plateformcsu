@@ -202,7 +202,7 @@ export class UtilisateurListComponent implements OnInit {
             const query = search.toLowerCase();
             return u.nom.toLowerCase().includes(query) || 
                    u.prenom.toLowerCase().includes(query) || 
-                   u.email.toLowerCase().includes(query) || 
+                   (u.email ? u.email.toLowerCase().includes(query) : false) || 
                    u.username.toLowerCase().includes(query);
           }
           return true;

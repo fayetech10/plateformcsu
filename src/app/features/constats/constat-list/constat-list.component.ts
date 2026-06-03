@@ -215,19 +215,15 @@ export class ConstatListComponent implements OnInit {
       },
       error: () => {
         this.loading = false;
-        // Mock fallback data
-        this.constats = this.getMockConstats().filter(c => {
-          if (statut && c.statut !== statut) return false;
-          if (priorite && c.priorite !== priorite) return false;
-          if (search) {
-            const query = search.toLowerCase();
-            return c.referenceConstat.toLowerCase().includes(query) || 
-                   c.description.toLowerCase().includes(query);
-          }
-          return true;
+        this.constats = [];
+        this.totalElements = 0;
+        this.totalPages = 0;
+        Swal.fire({
+          title: 'Erreur',
+          text: 'Impossible de charger les constats. Veuillez vérifier votre connexion au serveur.',
+          icon: 'error',
+          confirmButtonColor: '#10b981'
         });
-        this.totalElements = this.constats.length;
-        this.totalPages = Math.ceil(this.constats.length / this.size) || 1;
       }
     });
   }
@@ -286,32 +282,30 @@ export class ConstatListComponent implements OnInit {
       showCancelButton: true,
       confirmButtonText: 'Oui, archiver',
       cancelButtonText: 'Annuler',
-      confirmButtonColor: '#F9A825',
-      cancelButtonColor: '#6c757d'
+      confirmButtonColor: '#f59e0b',
+      cancelButtonColor: '#64748b'
     }).then((result) => {
       if (result.isConfirmed) {
         this.constatService.archiverConstat(c.id!).subscribe({
           next: () => {
-            Swal.fire('Archivé !', "Le constat a été archivé.", 'success');
+            Swal.fire({
+              title: 'Archivé !',
+              text: "Le constat a été archivé.",
+              icon: 'success',
+              confirmButtonColor: '#10b981'
+            });
             this.loadConstats();
           },
           error: () => {
-            // Mock simulation
-            c.archive = true;
-            c.statut = 'ARCHIVE';
-            Swal.fire('Archivé !', "Le constat a été archivé (Simulation).", 'success');
-            this.loadConstats();
+            Swal.fire({
+              title: 'Erreur',
+              text: 'Une erreur est survenue lors de l\'archivage du constat.',
+              icon: 'error',
+              confirmButtonColor: '#10b981'
+            });
           }
         });
       }
     });
-  }
-
-  private getMockConstats(): Constat[] {
-    return [
-      { id: 1, referenceConstat: 'CST-2026-0001', dateConstat: '2026-05-10', description: 'Dysfonctionnement de l\'imprimante de cartes d\'adhésion au bureau local.', priorite: 'HAUTE', statut: 'OUVERT', responsableNom: 'Amina Diop', archive: false, bureauCsuId: 1, categorieNom: 'Matériel' },
-      { id: 2, referenceConstat: 'CST-2026-0002', dateConstat: '2026-05-12', description: 'Coupure réseau internet prolongée impactant les enrôlements.', priorite: 'URGENTE', statut: 'EN_COURS', responsableNom: 'Idrissa Diallo', archive: false, bureauCsuId: 2, categorieNom: 'Infrastructure' },
-      { id: 3, referenceConstat: 'CST-2026-0003', dateConstat: '2026-05-14', description: 'Erreur d\'affichage des statistiques de la région Thiès.', priorite: 'BASSE', statut: 'RESOLU', responsableNom: 'Papa Diop', archive: false, bureauCsuId: 1, categorieNom: 'Logiciel' }
-    ];
   }
 }

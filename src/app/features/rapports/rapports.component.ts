@@ -110,6 +110,21 @@ import Swal from 'sweetalert2';
                     </div>
                   </div>
                 }
+
+                <!-- Only My Data (Toggle for Agents/All users) -->
+                <div class="col-12 mt-2">
+                  <div class="form-check form-switch">
+                    <input
+                      class="form-check-input"
+                      type="checkbox"
+                      id="onlyMyData"
+                      formControlName="onlyMyData"
+                    >
+                    <label class="form-check-label text-secondary small" for="onlyMyData">
+                      N'exporter que mes saisies (données associées à mon compte agent)
+                    </label>
+                  </div>
+                </div>
               </div>
 
               <!-- Export Buttons -->
@@ -195,7 +210,8 @@ export class RapportsComponent implements OnInit {
     startDate: [this.getDefaultStartDate(), [Validators.required]],
     endDate: [new Date().toISOString().split('T')[0], [Validators.required]],
     bureauCsuId: [''],
-    structureId: ['']
+    structureId: [''],
+    onlyMyData: [false]
   });
 
   ngOnInit(): void {
@@ -225,118 +241,102 @@ export class RapportsComponent implements OnInit {
       next: (data) => {
         this.bureaux = data;
       },
-      error: () => {
-        // Mock fallback
-        this.bureaux = [
-          { id: 1, nom: 'Dakar Centre', code: 'DKR-01', region: 'Dakar', departement: 'Dakar', commune: 'Medina', adresse: '', telephone: '', actif: true },
-          { id: 2, nom: 'Mbour Littoral', code: 'MBR-02', region: 'Thiès', departement: 'Mbour', commune: 'Saly', adresse: '', telephone: '', actif: true },
-          { id: 3, nom: 'Mbacké Baol', code: 'MBK-03', region: 'Diourbel', departement: 'Mbacké', commune: 'Mbacké', adresse: '', telephone: '', actif: true }
-        ];
+      error: (err) => {
+        console.error('Erreur lors du chargement des bureaux:', err);
+        this.bureaux = [];
       }
     });
   }
 
   loadStructures(): void {
-    // Mock data for structures
-    this.structures = [
-      { id: 10, nom: 'Structure de Santé Alpha' },
-      { id: 11, nom: 'Hôpital Général Beta' },
-      { id: 12, nom: 'Clinique Gamma' }
-    ];
+    // TODO: Replace with real API call when structure service is available
+    this.structures = [];
   }
 
   exportPdf(): void {
     if (this.rapportForm.invalid) return;
     this.exportingPdf = true;
 
-    // Simulate network delay
-    setTimeout(() => {
-      this.exportingPdf = false;
-      const { startDate, endDate } = this.rapportForm.value;
-      
-      const printWindow = window.open('', '_blank');
-      if (printWindow) {
-        printWindow.document.write(`
-          <html>
-            <head>
-              <title>Rapport CSU - ${startDate} au ${endDate}</title>
-              <style>
-                body { font-family: 'Arial', sans-serif; padding: 20px; }
-                table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-                th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-                th { background-color: #f4f4f4; color: #00875A; }
-                h1 { color: #00875A; }
-              </style>
-            </head>
-            <body>
-              <h1>Rapport des Opérations CSU</h1>
-              <p><strong>Période :</strong> ${startDate} au ${endDate}</p>
-              <table>
-                <thead>
-                  <tr>
-                    <th>Date</th>
-                    <th>Bureau CSU</th>
-                    <th>Nouveaux Patients</th>
-                    <th>Bénéficiaires Enrôlés</th>
-                    <th>Activités</th>
-                    <th>Constats</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr><td>${startDate}</td><td>Dakar Centre</td><td>12</td><td>8</td><td>2</td><td>0</td></tr>
-                  <tr><td>${startDate}</td><td>Mbour Littoral</td><td>5</td><td>3</td><td>1</td><td>1</td></tr>
-                  <tr><td>${endDate}</td><td>Mbacké Baol</td><td>20</td><td>15</td><td>4</td><td>0</td></tr>
-                  <tr><td>${endDate}</td><td>Dakar Centre</td><td>8</td><td>6</td><td>1</td><td>0</td></tr>
-                </tbody>
-              </table>
-              <script>
-                window.onload = function() { window.print(); window.close(); }
-              </script>
-            </body>
-          </html>
-        `);
-        printWindow.document.close();
+    const { startDate, endDate, bureauCsuId, structureId, onlyMyData } = this.rapportForm.value;
+    
+    let actualBureauId = bureauCsuId ? Number(bureauCsuId) : undefined;
+    if (this.authService.isAgent()) {
+      actualBureauId = this.authService.currentUserValue?.bureau_id;
+    }
+    
+    let actualAgentId = onlyMyData ? this.authService.currentUserValue?.agent_id : undefined;
+
+    this.rapportService.downloadPdf(
+      startDate!, 
+      endDate!, 
+      actualBureauId, 
+      structureId ? Number(structureId) : undefined,
+      actualAgentId
+    ).subscribe({
+      next: () => {
+        this.exportingPdf = false;
+        Swal.fire({
+          toast: true,
+          position: 'top-end',
+          icon: 'success',
+          title: 'Rapport PDF téléchargé avec succès',
+          showConfirmButton: false,
+          timer: 3000
+        });
+      },
+      error: (err) => {
+        this.exportingPdf = false;
+        console.error('Erreur exportation PDF:', err);
+        Swal.fire({
+          icon: 'error',
+          title: 'Erreur',
+          text: 'Une erreur est survenue lors de la génération du rapport PDF.'
+        });
       }
-    }, 800);
+    });
   }
 
   exportExcel(): void {
     if (this.rapportForm.invalid) return;
     this.exportingExcel = true;
 
-    // Simulate network delay
-    setTimeout(() => {
-      this.exportingExcel = false;
-      const { startDate, endDate } = this.rapportForm.value;
+    const { startDate, endDate, bureauCsuId, structureId, onlyMyData } = this.rapportForm.value;
 
-      const csvContent = "Date,Bureau CSU,Nouveaux Patients,Beneficiaires Enroles,Activites Realisees,Constats Signales\n"
-        + `${startDate},Dakar Centre,12,8,2,0\n`
-        + `${startDate},Mbour Littoral,5,3,1,1\n`
-        + `${endDate},Mbacké Baol,20,15,4,0\n`
-        + `${endDate},Dakar Centre,8,6,1,0\n`;
+    let actualBureauId = bureauCsuId ? Number(bureauCsuId) : undefined;
+    if (this.authService.isAgent()) {
+      actualBureauId = this.authService.currentUserValue?.bureau_id;
+    }
 
-      const blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csvContent], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement("a");
-      
-      if (link.download !== undefined) {
-        const url = URL.createObjectURL(blob);
-        link.setAttribute("href", url);
-        link.setAttribute("download", `rapport_csu_${startDate}_${endDate}.csv`);
-        link.style.visibility = 'hidden';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
+    let actualAgentId = onlyMyData ? this.authService.currentUserValue?.agent_id : undefined;
+
+    this.rapportService.downloadExcel(
+      startDate!, 
+      endDate!, 
+      actualBureauId, 
+      structureId ? Number(structureId) : undefined,
+      actualAgentId
+    ).subscribe({
+      next: () => {
+        this.exportingExcel = false;
+        Swal.fire({
+          toast: true,
+          position: 'top-end',
+          icon: 'success',
+          title: 'Rapport Excel téléchargé avec succès',
+          showConfirmButton: false,
+          timer: 3000
+        });
+      },
+      error: (err) => {
+        this.exportingExcel = false;
+        console.error('Erreur exportation Excel:', err);
+        Swal.fire({
+          icon: 'error',
+          title: 'Erreur',
+          text: 'Une erreur est survenue lors de la génération du rapport Excel.'
+        });
       }
-
-      Swal.fire({
-        toast: true,
-        position: 'top-end',
-        icon: 'success',
-        title: 'Fichier Excel (CSV) téléchargé',
-        showConfirmButton: false,
-        timer: 3000
-      });
-    }, 800);
+    });
   }
 }
+

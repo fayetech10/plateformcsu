@@ -18,4 +18,16 @@ export interface Patient {
   agentId?: number;
   agentNom?: string;
   supprime?: boolean;
+  
+  // Specific fields for 0-5 ans
+  numeroRegistre?: string;
+  matriculeExtraitAccompagnant?: string;
+  datePriseEnCharge?: string;
+  service?: string;
+  prestationMedicament?: string;
+  diagnosticMotif?: string;
+  
+  // Identity photos
+  photoIdentiteRecto?: string;
+  photoIdentiteVerso?: string;
 }

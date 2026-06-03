@@ -32,7 +32,7 @@ import Swal from 'sweetalert2';
         </div>
       </div>
 
-      <div class="row g-4">
+      <div class="row g-3">
         <!-- Col 1: Patient Information Card -->
         <div class="col-12 col-lg-5">
           <div class="csu-card h-100">
@@ -50,6 +50,13 @@ import Swal from 'sweetalert2';
               </div>
 
               <div class="border-bottom pb-2">
+                <span class="d-block small text-muted">Catégorie de Prise en Charge</span>
+                <span class="csu-badge font-semibold" [ngClass]="getCategoryBadgeClass(patient)">
+                  {{ getCategoryLabel(patient) }}
+                </span>
+              </div>
+
+              <div class="border-bottom pb-2">
                 <span class="d-block small text-muted">Prénom & Nom</span>
                 <span class="fw-semibold">{{ patient.prenom }} {{ patient.nom }}</span>
               </div>
@@ -63,7 +70,7 @@ import Swal from 'sweetalert2';
 
               <div class="border-bottom pb-2">
                 <span class="d-block small text-muted">Date de Naissance</span>
-                <span>{{ patient.dateNaissance | date:'dd MMMM yyyy' }}</span>
+                <span>{{ patient.dateNaissance | date:'dd MMMM yyyy' }} ({{ calculateAge(patient.dateNaissance) }} ans)</span>
               </div>
 
               <div class="border-bottom pb-2">
@@ -84,9 +91,21 @@ import Swal from 'sweetalert2';
           </div>
         </div>
 
-        <!-- Col 2: Localisation & Enrolement Status -->
+        <!-- Col 2: Localisation & Enrolement Status & Category Specific Cards -->
         <div class="col-12 col-lg-7">
           <div class="d-flex flex-column gap-4">
+            
+            <!-- Special Banner: Plan Sésame -->
+            <div class="csu-card bg-light border-start border-warning border-4 py-3" *ngIf="getCategoryLabel(patient) === 'Plan Sésame'">
+              <div class="d-flex align-items-center gap-3">
+                <i class="bi bi-heart-pulse-fill text-warning fs-3"></i>
+                <div>
+                  <h4 class="mb-1 text-warning fw-bold small text-uppercase">Régime Gratuité Plan Sésame</h4>
+                  <p class="mb-0 text-muted small">Ce bénéficiaire est âgé de 60 ans ou plus et bénéficie de la gratuité des soins dans le cadre du Plan Sésame.</p>
+                </div>
+              </div>
+            </div>
+
             <!-- Card: Localisation -->
             <div class="csu-card">
               <div class="csu-card-header">
@@ -111,6 +130,66 @@ import Swal from 'sweetalert2';
                 <div class="col-12 mt-2">
                   <span class="d-block small text-muted">Adresse Complète</span>
                   <p class="mb-0 bg-light p-3 rounded text-secondary">{{ patient.adresse }}</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card: Informations Médicales (0 à 5 ans) -->
+            <div class="csu-card" *ngIf="getCategoryLabel(patient) === '0 à 5 ans' || patient.numeroRegistre || patient.diagnosticMotif">
+              <div class="csu-card-header">
+                <h3 class="csu-card-title text-csu-primary">
+                  <i class="bi bi-file-medical-fill text-primary"></i>
+                  Informations Médicales (0 à 5 ans)
+                </h3>
+              </div>
+              <div class="row g-3">
+                <div class="col-6 border-bottom pb-2">
+                  <span class="d-block small text-muted">Numéro de Registre</span>
+                  <span class="fw-semibold">{{ patient.numeroRegistre || '-' }}</span>
+                </div>
+                <div class="col-6 border-bottom pb-2">
+                  <span class="d-block small text-muted">N° Matricule / Extrait / Accompagnant</span>
+                  <span class="fw-semibold">{{ patient.matriculeExtraitAccompagnant || '-' }}</span>
+                </div>
+                <div class="col-6 border-bottom pb-2">
+                  <span class="d-block small text-muted">Date de Prise en Charge</span>
+                  <span>{{ (patient.datePriseEnCharge | date:'dd/MM/yyyy') || '-' }}</span>
+                </div>
+                <div class="col-6 border-bottom pb-2">
+                  <span class="d-block small text-muted">Service</span>
+                  <span>{{ patient.service || '-' }}</span>
+                </div>
+                <div class="col-12 border-bottom pb-2">
+                  <span class="d-block small text-muted">Prestation et Médicament</span>
+                  <p class="mb-0 text-secondary small bg-light p-2 rounded">{{ patient.prestationMedicament || '-' }}</p>
+                </div>
+                <div class="col-12">
+                  <span class="d-block small text-muted">Diagnostic / Motif de consultation</span>
+                  <p class="mb-0 text-secondary small bg-light p-2 rounded">{{ patient.diagnosticMotif || '-' }}</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card: Pièce d'Identité (Classique / Autre) -->
+            <div class="csu-card" *ngIf="patient.photoIdentiteRecto || patient.photoIdentiteVerso">
+              <div class="csu-card-header">
+                <h3 class="csu-card-title">
+                  <i class="bi bi-card-image text-secondary"></i>
+                  Pièces d'Identité
+                </h3>
+              </div>
+              <div class="row g-3">
+                <div class="col-12 col-md-6" *ngIf="patient.photoIdentiteRecto">
+                  <span class="d-block small text-muted mb-2">Recto</span>
+                  <div class="identity-photo-wrapper">
+                    <img [src]="patient.photoIdentiteRecto" class="img-fluid rounded border shadow-sm" alt="Recto de la pièce" />
+                  </div>
+                </div>
+                <div class="col-12 col-md-6" *ngIf="patient.photoIdentiteVerso">
+                  <span class="d-block small text-muted mb-2">Verso</span>
+                  <div class="identity-photo-wrapper">
+                    <img [src]="patient.photoIdentiteVerso" class="img-fluid rounded border shadow-sm" alt="Verso de la pièce" />
+                  </div>
                 </div>
               </div>
             </div>
@@ -175,7 +254,31 @@ import Swal from 'sweetalert2';
         </div>
       </div>
     </div>
-  `
+  `,
+  styles: [`
+    .hover-primary:hover {
+      color: var(--csu-primary) !important;
+    }
+    .identity-photo-wrapper {
+      max-height: 140px;
+      overflow: hidden;
+      border-radius: 12px;
+      background: #f1f5f9;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 6px;
+    }
+    .identity-photo-wrapper img {
+      max-height: 128px;
+      object-fit: contain;
+      width: 100%;
+      transition: transform 0.3s ease;
+    }
+    .identity-photo-wrapper img:hover {
+      transform: scale(1.05);
+    }
+  `]
 })
 export class PatientDetailComponent implements OnInit {
   private route = inject(ActivatedRoute);
@@ -196,18 +299,10 @@ export class PatientDetailComponent implements OnInit {
         this.patient = data;
         this.checkEnrolement(id);
       },
-      error: () => {
-        // Mock fallback
-        const mockPatients = [
-          { id: 1, numeroDossier: 'DOS-2026-0001', prenom: 'Moussa', nom: 'Diop', sexe: 'M', dateNaissance: '1985-05-12', telephone: '776543210', adresse: 'Medina Rue 15', region: 'Dakar', departement: 'Dakar', commune: 'Medina', dateEnregistrement: '2026-05-15T09:00:00Z', bureauCsuNom: 'Dakar Centre' },
-          { id: 2, numeroDossier: 'DOS-2026-0002', prenom: 'Fatou', nom: 'Ndiaye', sexe: 'F', dateNaissance: '1992-09-24', telephone: '781234567', adresse: 'Saly Port', region: 'Thiès', departement: 'Mbour', commune: 'Saly', dateEnregistrement: '2026-05-16T10:30:00Z', bureauCsuNom: 'Mbour Littoral' }
-        ];
-        this.patient = mockPatients.find(p => p.id === id) as any;
-        if (this.patient) {
-          this.checkEnrolement(id);
-        } else {
-          Swal.fire('Erreur', 'Impossible de charger les détails du patient.', 'error');
-        }
+      error: (err) => {
+        console.error('Erreur lors du chargement du patient:', err);
+        this.patient = undefined;
+        Swal.fire('Erreur', 'Impossible de charger les détails du patient.', 'error');
       }
     });
   }
@@ -215,16 +310,44 @@ export class PatientDetailComponent implements OnInit {
   checkEnrolement(patientId: number): void {
     this.enrolementService.getEnrolements(0, 10, undefined, this.patient?.numeroDossier).subscribe({
       next: (res) => {
-        // Try to match by patient ID
         this.enrolement = res.content.find(e => e.patientId === patientId);
       },
-      error: () => {
-        // Mock fallback enrolement
-        const mockEnrolements: Enrolement[] = [
-          { id: 1, numeroBeneficiaire: 'BEN-2026-9812', patientId: 1, dateEnrolement: '2026-05-15', statut: 'VALIDE', agentNom: 'Amina Diop', observations: 'Adhésion validée. Cotisation à jour.', bureauCsuNom: 'Dakar Centre' }
-        ];
-        this.enrolement = mockEnrolements.find(e => e.patientId === patientId);
+      error: (err) => {
+        console.error('Erreur lors du chargement de l\'enrôlement:', err);
+        this.enrolement = undefined;
       }
     });
+  }
+
+  calculateAge(dateString?: string): number {
+    if (!dateString) return 0;
+    const today = new Date();
+    const birthDate = new Date(dateString);
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age;
+  }
+
+  getCategoryLabel(patient: Patient): string {
+    const age = this.calculateAge(patient.dateNaissance);
+    if (age <= 5) return '0 à 5 ans';
+    if (age >= 60) return 'Plan Sésame';
+    if (patient.photoIdentiteRecto || patient.photoIdentiteVerso) return 'Classique';
+    if (patient.sexe === 'F') return 'Césarienne';
+    return 'Autre';
+  }
+
+  getCategoryBadgeClass(patient: Patient): string {
+    const cat = this.getCategoryLabel(patient);
+    switch (cat) {
+      case '0 à 5 ans': return 'csu-badge-primary';
+      case 'Plan Sésame': return 'csu-badge-warning';
+      case 'Classique': return 'csu-badge-success';
+      case 'Césarienne': return 'csu-badge-danger';
+      default: return 'csu-badge-secondary';
+    }
   }
 }
