@@ -2,6 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { PatientService } from '../../../core/services/patient.service';
 import { EnrolementService } from '../../../core/services/enrolement.service';
+import { AuthService } from '../../../core/services/auth.service';
 import { Patient } from '../../../core/models/patient.model';
 import { Enrolement } from '../../../core/models/enrolement.model';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -23,9 +24,11 @@ import Swal from 'sweetalert2';
           <p class="csu-page-subtitle">Dossier N° : {{ patient.numeroDossier }}</p>
         </div>
         <div class="d-flex gap-2">
-          <a [routerLink]="['/patients', patient.id, 'modifier']" class="csu-btn csu-btn-secondary">
-            <i class="bi bi-pencil-fill"></i> Modifier la Fiche
-          </a>
+          @if (patient && canModify(patient)) {
+            <a [routerLink]="['/patients', patient.id, 'modifier']" class="csu-btn csu-btn-secondary">
+              <i class="bi bi-pencil-fill"></i> Modifier la Fiche
+            </a>
+          }
           <a routerLink="/patients" class="csu-btn csu-btn-light">
             Retour
           </a>
@@ -284,6 +287,7 @@ export class PatientDetailComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private patientService = inject(PatientService);
   private enrolementService = inject(EnrolementService);
+  private authService = inject(AuthService);
 
   patient?: Patient;
   enrolement?: Enrolement;
@@ -319,6 +323,13 @@ export class PatientDetailComponent implements OnInit {
     });
   }
 
+  canModify(patient: Patient): boolean {
+    const user = this.authService.currentUserValue;
+    if (!user) return false;
+    if (user.role === 'ADMIN' || user.role === 'SUPERVISEUR') return true;
+    return patient.agentId === user.agent_id;
+  }
+
   calculateAge(dateString?: string): number {
     if (!dateString) return 0;
     const today = new Date();
@@ -332,6 +343,14 @@ export class PatientDetailComponent implements OnInit {
   }
 
   getCategoryLabel(patient: Patient): string {
+    if (patient.categorie) {
+      switch (patient.categorie) {
+        case '0-5ans': return '0 à 5 ans';
+        case 'plan-sesame': return 'Plan Sésame';
+        case 'classique': return 'Classique';
+        case 'cesarienne': return 'Césarienne';
+      }
+    }
     const age = this.calculateAge(patient.dateNaissance);
     if (age <= 5) return '0 à 5 ans';
     if (age >= 60) return 'Plan Sésame';
@@ -339,6 +358,7 @@ export class PatientDetailComponent implements OnInit {
     if (patient.sexe === 'F') return 'Césarienne';
     return 'Autre';
   }
+
 
   getCategoryBadgeClass(patient: Patient): string {
     const cat = this.getCategoryLabel(patient);

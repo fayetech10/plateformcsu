@@ -1,6 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ConstatService } from '../../../core/services/constat.service';
+import { AuthService } from '../../../core/services/auth.service';
 import { Constat, StatutConstat, PrioriteConstat } from '../../../core/models/constat.model';
 import { RouterLink } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
@@ -129,13 +130,19 @@ import Swal from 'sweetalert2';
                   <td>{{ c.responsableNom || 'Non assigné' }}</td>
                   <td class="text-end">
                     <div class="d-inline-flex gap-2">
-                      <a [routerLink]="['/constats', c.id, 'modifier']" class="csu-btn-icon" title="Modifier">
-                        <i class="bi bi-pencil"></i>
-                      </a>
-                      @if (!c.archive) {
-                        <button (click)="onArchive(c)" class="csu-btn-icon text-warning" title="Archiver">
-                          <i class="bi bi-archive"></i>
-                        </button>
+                      @if (canModify(c)) {
+                        <a [routerLink]="['/constats', c.id, 'modifier']" class="csu-btn-icon" title="Modifier">
+                          <i class="bi bi-pencil"></i>
+                        </a>
+                        @if (!c.archive) {
+                          <button (click)="onArchive(c)" class="csu-btn-icon text-warning" title="Archiver">
+                            <i class="bi bi-archive"></i>
+                          </button>
+                        }
+                      } @else {
+                        <span class="text-muted small" title="Constat d'un collègue - lecture seule">
+                          <i class="bi bi-eye"></i>
+                        </span>
                       }
                     </div>
                   </td>
@@ -174,6 +181,7 @@ import Swal from 'sweetalert2';
 })
 export class ConstatListComponent implements OnInit {
   private constatService = inject(ConstatService);
+  private authService = inject(AuthService);
   private fb = inject(FormBuilder);
 
   constats: Constat[] = [];
@@ -272,6 +280,13 @@ export class ConstatListComponent implements OnInit {
     if (s === 'RESOLU') return 'Résolu';
     if (s === 'ARCHIVE') return 'Archivé';
     return s;
+  }
+
+  canModify(c: Constat): boolean {
+    const user = this.authService.currentUserValue;
+    if (!user) return false;
+    if (user.role === 'ADMIN' || user.role === 'SUPERVISEUR') return true;
+    return c.responsableId === user.agent_id;
   }
 
   onArchive(c: Constat): void {

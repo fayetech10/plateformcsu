@@ -119,7 +119,7 @@ import Swal from 'sweetalert2';
                   </td>
                   <td class="text-end">
                     <div class="d-inline-flex gap-2">
-                      @if (canUpdateStatus(e.statut)) {
+                      @if (canUpdateStatus(e.statut) && canModify(e)) {
                         <button (click)="onUpdateStatus(e, 'VALIDE')" class="csu-btn-icon text-success" title="Valider l'adhésion">
                           <i class="bi bi-check-circle"></i>
                         </button>
@@ -265,6 +265,13 @@ export class EnrolementListComponent implements OnInit {
   canUpdateStatus(statut: StatutEnrolement): boolean {
     const isSupervisorOrAdmin = this.authService.isSuperviseur() || this.authService.isAdmin();
     return isSupervisorOrAdmin && statut === 'EN_COURS';
+  }
+
+  canModify(enr: Enrolement): boolean {
+    const user = this.authService.currentUserValue;
+    if (!user) return false;
+    if (user.role === 'ADMIN' || user.role === 'SUPERVISEUR') return true;
+    return enr.agentId === user.agent_id;
   }
 
   onUpdateStatus(enr: Enrolement, newStatut: StatutEnrolement): void {

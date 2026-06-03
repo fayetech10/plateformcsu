@@ -599,6 +599,7 @@ export class PatientFormComponent implements OnInit {
 
   patientForm = this.fb.group({
     numeroDossier: ['DOS-2026-XXXX'],
+    categorie: [''],
     prenom: ['', [Validators.required]],
     nom: ['', [Validators.required]],
     sexe: ['', [Validators.required]],
@@ -630,7 +631,8 @@ export class PatientFormComponent implements OnInit {
       const year = new Date().getFullYear();
       const rand = Math.floor(1000 + Math.random() * 9000);
       this.patientForm.patchValue({
-        numeroDossier: `DOS-${year}-${rand}`
+        numeroDossier: `DOS-${year}-${rand}`,
+        categorie: this.patientType || 'classique'
       });
 
       // Apply initial settings based on type
@@ -640,6 +642,7 @@ export class PatientFormComponent implements OnInit {
       }
     }
   }
+
 
   isFieldInvalid(field: string): boolean {
     const control = this.patientForm.get(field);
@@ -672,6 +675,7 @@ export class PatientFormComponent implements OnInit {
 
     this.patientForm.patchValue({
       numeroDossier: patient.numeroDossier,
+      categorie: patient.categorie || '',
       prenom: patient.prenom,
       nom: patient.nom,
       sexe: patient.sexe,
@@ -694,22 +698,30 @@ export class PatientFormComponent implements OnInit {
     this.photoRectoUrl = patient.photoIdentiteRecto || null;
     this.photoVersoUrl = patient.photoIdentiteVerso || null;
 
+    // Set form category if not present
+    if (!this.patientForm.get('categorie')?.value && this.patientType) {
+      this.patientForm.patchValue({ categorie: this.patientType });
+    }
+
     // If edit mode and no type query param is set, infer type from patient characteristics
     if (!this.patientType) {
-      const birthDate = this.patientForm.get('dateNaissance')?.value;
-      if (birthDate) {
-        const age = this.calculateAge(birthDate);
-        if (age <= 5) {
-          this.patientType = '0-5ans';
-        } else if (age >= 60) {
-          this.patientType = 'plan-sesame';
-        } else if (patient.sexe === 'F') {
-          this.patientType = 'classique';
-        } else {
-          this.patientType = 'classique';
+      if (patient.categorie) {
+        this.patientType = patient.categorie;
+      } else {
+        const birthDate = this.patientForm.get('dateNaissance')?.value;
+        if (birthDate) {
+          const age = this.calculateAge(birthDate);
+          if (age <= 5) {
+            this.patientType = '0-5ans';
+          } else if (age >= 60) {
+            this.patientType = 'plan-sesame';
+          } else {
+            this.patientType = 'classique';
+          }
         }
       }
     }
+
 
     // Apply gender locking if category is césarienne
     if (this.patientType === 'cesarienne') {

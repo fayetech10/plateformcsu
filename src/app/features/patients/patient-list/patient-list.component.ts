@@ -4,7 +4,9 @@ import { PatientService } from '../../../core/services/patient.service';
 import { Patient } from '../../../core/models/patient.model';
 import { RouterLink } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { AuthService } from '../../../core/services/auth.service';
 import Swal from 'sweetalert2';
+
 
 @Component({
   selector: 'app-patient-list',
@@ -122,13 +124,16 @@ import Swal from 'sweetalert2';
                       <a [routerLink]="['/patients', p.id]" class="csu-btn-icon" title="Consulter la fiche">
                         <i class="bi bi-eye"></i>
                       </a>
-                      <a [routerLink]="['/patients', p.id, 'modifier']" class="csu-btn-icon" title="Modifier">
-                        <i class="bi bi-pencil"></i>
-                      </a>
-                      <button (click)="onDelete(p)" class="csu-btn-icon danger" title="Supprimer">
-                        <i class="bi bi-trash"></i>
-                      </button>
+                      @if (canModify(p)) {
+                        <a [routerLink]="['/patients', p.id, 'modifier']" class="csu-btn-icon" title="Modifier">
+                          <i class="bi bi-pencil"></i>
+                        </a>
+                        <button (click)="onDelete(p)" class="csu-btn-icon danger" title="Supprimer">
+                          <i class="bi bi-trash"></i>
+                        </button>
+                      }
                     </div>
+
                   </td>
                 </tr>
               }
@@ -165,7 +170,9 @@ import Swal from 'sweetalert2';
 })
 export class PatientListComponent implements OnInit {
   private patientService = inject(PatientService);
+  private authService = inject(AuthService);
   private fb = inject(FormBuilder);
+
 
   patients: Patient[] = [];
   loading = false;
@@ -297,6 +304,14 @@ export class PatientListComponent implements OnInit {
   }
 
   getCategoryLabel(patient: Patient): string {
+    if (patient.categorie) {
+      switch (patient.categorie) {
+        case '0-5ans': return '0 à 5 ans';
+        case 'plan-sesame': return 'Plan Sésame';
+        case 'classique': return 'Classique';
+        case 'cesarienne': return 'Césarienne';
+      }
+    }
     const age = this.calculateAge(patient.dateNaissance);
     if (age <= 5) return '0 à 5 ans';
     if (age >= 60) return 'Plan Sésame';
@@ -304,6 +319,7 @@ export class PatientListComponent implements OnInit {
     if (patient.sexe === 'F') return 'Césarienne';
     return 'Autre';
   }
+
 
   getCategoryBadgeClass(patient: Patient): string {
     const cat = this.getCategoryLabel(patient);
@@ -315,4 +331,12 @@ export class PatientListComponent implements OnInit {
       default: return 'csu-badge-secondary';
     }
   }
+
+  canModify(patient: Patient): boolean {
+    const user = this.authService.currentUserValue;
+    if (!user) return false;
+    if (user.role === 'ADMIN' || user.role === 'SUPERVISEUR') return true;
+    return patient.agentId === user.agent_id;
+  }
 }
+

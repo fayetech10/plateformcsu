@@ -3,6 +3,8 @@ export type Sexe = 'M' | 'F';
 export interface Patient {
   id?: number;
   numeroDossier: string;
+  categorie?: string;
+
   prenom: string;
   nom: string;
   sexe: Sexe;

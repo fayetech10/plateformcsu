@@ -4,7 +4,9 @@ import { ActiviteService } from '../../../core/services/activite.service';
 import { Activite, TypeActivite } from '../../../core/models/activite.model';
 import { RouterLink } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { AuthService } from '../../../core/services/auth.service';
 import Swal from 'sweetalert2';
+
 
 @Component({
   selector: 'app-activite-list',
@@ -118,14 +120,17 @@ import Swal from 'sweetalert2';
                   <td>{{ act.agentNom || '-' }}</td>
                   <td class="text-end">
                     <div class="d-inline-flex gap-2">
-                      <a [routerLink]="['/activites', act.id, 'modifier']" class="csu-btn-icon" title="Modifier">
-                        <i class="bi bi-pencil"></i>
-                      </a>
-                      <button (click)="onDelete(act)" class="csu-btn-icon danger" title="Supprimer">
-                        <i class="bi bi-trash"></i>
-                      </button>
+                      @if (canModify(act)) {
+                        <a [routerLink]="['/activites', act.id, 'modifier']" class="csu-btn-icon" title="Modifier">
+                          <i class="bi bi-pencil"></i>
+                        </a>
+                        <button (click)="onDelete(act)" class="csu-btn-icon danger" title="Supprimer">
+                          <i class="bi bi-trash"></i>
+                        </button>
+                      }
                     </div>
                   </td>
+
                 </tr>
               }
             </tbody>
@@ -161,7 +166,9 @@ import Swal from 'sweetalert2';
 })
 export class ActiviteListComponent implements OnInit {
   private activiteService = inject(ActiviteService);
+  private authService = inject(AuthService);
   private fb = inject(FormBuilder);
+
 
   activites: Activite[] = [];
   loading = false;
@@ -285,4 +292,12 @@ export class ActiviteListComponent implements OnInit {
       }
     });
   }
+
+  canModify(act: Activite): boolean {
+    const user = this.authService.currentUserValue;
+    if (!user) return false;
+    if (user.role === 'ADMIN' || user.role === 'SUPERVISEUR') return true;
+    return act.agentId === user.agent_id;
+  }
 }
+
