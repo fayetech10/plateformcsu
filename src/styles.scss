@@ -493,49 +493,347 @@ a:hover { color: var(--csu-primary-dark); }
    Login Page
    ============================================== */
 .csu-login-wrapper {
-  min-height: 100vh; display: flex; align-items: center; justify-content: center;
-  background: linear-gradient(135deg, #0D1520 0%, #1A2332 30%, var(--csu-primary-dark) 70%, var(--csu-primary) 100%);
-  position: relative; overflow: hidden;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #0D1520 0%, #1A2332 20%, var(--csu-primary-dark) 60%, var(--csu-primary) 100%);
+  position: relative;
+  overflow: hidden;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
-.csu-login-wrapper::before {
-  content: ''; position: absolute; top: -50%; right: -20%;
-  width: 600px; height: 600px;
-  background: radial-gradient(circle, rgba(0,135,90,0.15), transparent 70%);
+
+/* Animated Background Decorations */
+.csu-login-decoration {
+  position: absolute;
   border-radius: 50%;
+  filter: blur(60px);
+  opacity: 0;
+  animation: float 20s infinite ease-in-out;
 }
-.csu-login-wrapper::after {
-  content: ''; position: absolute; bottom: -30%; left: -10%;
-  width: 500px; height: 500px;
-  background: radial-gradient(circle, rgba(0,135,90,0.1), transparent 70%);
-  border-radius: 50%;
+
+.csu-decoration-1 {
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(0, 135, 90, 0.2), transparent 70%);
+  top: -100px;
+  right: -150px;
+  animation-delay: 0s;
 }
+
+.csu-decoration-2 {
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(0, 195, 123, 0.15), transparent 70%);
+  bottom: -80px;
+  left: -100px;
+  animation-delay: 5s;
+}
+
+.csu-decoration-3 {
+  width: 250px;
+  height: 250px;
+  background: radial-gradient(circle, rgba(0, 135, 90, 0.12), transparent 70%);
+  top: 50%;
+  left: 10%;
+  animation-delay: 10s;
+}
+
+@keyframes float {
+  0%, 100% { opacity: 0.5; transform: translate(0, 0) scale(1); }
+  50% { opacity: 0.8; transform: translate(30px, -30px) scale(1.1); }
+}
+
+.csu-login-container {
+  width: 100%;
+  z-index: 10;
+}
+
 .csu-login-card {
-  background: rgba(255,255,255,0.95); backdrop-filter: blur(20px);
-  border-radius: var(--csu-radius-lg); padding: 3rem;
-  width: 100%; max-width: 440px;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-  position: relative; z-index: 1;
-  animation: fadeInUp 0.6s ease-out;
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(30px);
+  border-radius: var(--csu-radius-lg);
+  padding: 3rem;
+  width: 100%;
+  max-width: 460px;
+  margin: 0 auto;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25),
+              0 0 1px rgba(0, 135, 90, 0.5);
+  position: relative;
+  z-index: 1;
+  animation: fadeInUp 0.7s ease-out;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
-.csu-login-logo { text-align: center; margin-bottom: 2rem; }
+
+.csu-login-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 35px 60px rgba(0, 0, 0, 0.3),
+              0 0 2px rgba(0, 135, 90, 0.6);
+}
+
+.csu-login-header {
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 2px solid rgba(0, 135, 90, 0.1);
+}
+
+.csu-login-logo {
+  text-align: center;
+}
+
 .csu-login-logo-icon {
-  width: 70px; height: 70px;
-  background: linear-gradient(135deg, var(--csu-primary), #00C67B);
-  border-radius: var(--csu-radius);
-  display: flex; align-items: center; justify-content: center;
-  color: #fff; font-size: 2rem; margin: 0 auto 1rem;
-  box-shadow: var(--csu-shadow-primary);
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, var(--csu-primary), #00D084);
+  border-radius: var(--csu-radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 2.2rem;
+  margin: 0 auto 1.2rem;
+  box-shadow: 0 10px 30px rgba(0, 135, 90, 0.3);
+  transition: all 0.3s ease;
+  animation: scaleIn 0.6s ease-out 0.2s both;
 }
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.csu-login-logo-icon:hover {
+  transform: scale(1.08) rotate(5deg);
+  box-shadow: 0 15px 40px rgba(0, 135, 90, 0.4);
+}
+
 .csu-login-title {
-  font-family: 'Outfit', sans-serif; font-size: 1.5rem;
-  font-weight: 700; color: var(--csu-text); margin-bottom: 0.25rem;
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.7rem;
+  font-weight: 800;
+  color: var(--csu-text);
+  margin-bottom: 0.3rem;
+  letter-spacing: -0.5px;
 }
-.csu-login-subtitle { font-size: 0.9rem; color: var(--csu-text-muted); }
-.csu-login-btn { width: 100%; padding: 0.875rem; font-size: 1rem; font-weight: 700; margin-top: 0.5rem; }
+
+.csu-login-subtitle {
+  font-size: 0.95rem;
+  color: var(--csu-text-muted);
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+
+/* Form Styles */
+.csu-login-form {
+  margin: 1.5rem 0;
+}
+
+.csu-form-group {
+  margin-bottom: 1.5rem;
+}
+
+.csu-form-label {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--csu-text);
+  margin-bottom: 0.6rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: color 0.2s ease;
+}
+
+.csu-form-label i {
+  font-size: 1.1rem;
+  color: var(--csu-primary);
+}
+
+.csu-form-control {
+  width: 100%;
+  padding: 0.95rem 1rem;
+  font-size: 1rem;
+  border: 2px solid var(--csu-border);
+  border-radius: var(--csu-radius-sm);
+  background: rgba(255, 255, 255, 0.8);
+  color: var(--csu-text);
+  transition: all 0.3s ease;
+  font-family: inherit;
+  padding-right: 45px;
+}
+
+.csu-form-control::placeholder {
+  color: var(--csu-text-muted);
+  font-weight: 400;
+}
+
+.csu-form-control:focus {
+  border-color: var(--csu-primary);
+  background: #fff;
+  box-shadow: 0 0 0 4px rgba(0, 135, 90, 0.1);
+  outline: none;
+}
+
+.csu-form-control.is-invalid {
+  border-color: var(--csu-danger);
+  background: rgba(229, 57, 53, 0.02);
+}
+
+.csu-form-control.is-invalid:focus {
+  box-shadow: 0 0 0 4px rgba(229, 57, 53, 0.1);
+}
+
+/* Login Error Message */
 .csu-login-error {
-  background: rgba(229,57,53,0.08); border: 1px solid rgba(229,57,53,0.2);
-  color: var(--csu-danger); padding: 0.75rem 1rem; border-radius: var(--csu-radius-sm);
-  font-size: 0.85rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;
+  background: linear-gradient(135deg, rgba(229, 57, 53, 0.08), rgba(229, 57, 53, 0.04));
+  border: 1px solid rgba(229, 57, 53, 0.3);
+  border-left: 4px solid var(--csu-danger);
+  color: var(--csu-danger);
+  padding: 1rem;
+  border-radius: var(--csu-radius-sm);
+  font-size: 0.9rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  animation: slideInLeft 0.3s ease-out;
+}
+
+.csu-invalid-feedback {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--csu-danger);
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
+  animation: slideInLeft 0.2s ease-out;
+}
+
+.csu-invalid-feedback i {
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+
+/* Login Button */
+.csu-login-btn {
+  width: 100%;
+  padding: 1rem;
+  font-size: 1rem;
+  font-weight: 700;
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+  border: none;
+  border-radius: var(--csu-radius-sm);
+  background: linear-gradient(135deg, var(--csu-primary), #00C67B);
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  font-family: inherit;
+  box-shadow: 0 8px 20px rgba(0, 135, 90, 0.3);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.csu-login-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px rgba(0, 135, 90, 0.4);
+  background: linear-gradient(135deg, #00A66D, #00D084);
+}
+
+.csu-login-btn:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 6px 15px rgba(0, 135, 90, 0.3);
+}
+
+.csu-login-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.csu-login-btn i {
+  font-size: 1.1rem;
+}
+
+/* Login Footer */
+.csu-login-footer {
+  text-align: center;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(0, 135, 90, 0.1);
+}
+
+.footer-text {
+  font-size: 0.85rem;
+  color: var(--csu-text-muted);
+  margin: 0;
+}
+
+/* Support Link */
+.csu-login-support {
+  text-align: center;
+  margin-top: 2rem;
+}
+
+.csu-login-support p {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.85);
+  margin: 0;
+}
+
+.support-link {
+  color: rgba(255, 255, 255, 1);
+  text-decoration: none;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  padding-bottom: 2px;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.support-link:hover,
+.support-link:focus {
+  color: #FFF;
+  border-bottom-color: rgba(255, 255, 255, 1);
+}
+
+/* Responsive Design */
+@media (max-width: 576px) {
+  .csu-login-card {
+    padding: 2rem;
+    margin: 1rem;
+  }
+
+  .csu-login-title {
+    font-size: 1.4rem;
+  }
+
+  .csu-login-logo-icon {
+    width: 70px;
+    height: 70px;
+    font-size: 1.8rem;
+  }
+
+  .csu-login-decoration-1 {
+    display: none;
+  }
+
+  .csu-login-decoration-2 {
+    width: 250px;
+    height: 250px;
+  }
+
+  .csu-login-decoration-3 {
+    display: none;
+  }
 }
 
 /* ==============================================
