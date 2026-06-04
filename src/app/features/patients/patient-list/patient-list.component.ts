@@ -3,15 +3,15 @@ import { CommonModule } from '@angular/common';
 import { PatientService } from '../../../core/services/patient.service';
 import { Patient } from '../../../core/models/patient.model';
 import { RouterLink } from '@angular/router';
-import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { AuthService } from '../../../core/services/auth.service';
+import { FilterBarComponent, FilterGroup, FilterValues } from '../../../shared/components/filter-bar/filter-bar.component';
 import Swal from 'sweetalert2';
 
 
 @Component({
   selector: 'app-patient-list',
   standalone: true,
-  imports: [CommonModule, RouterLink, ReactiveFormsModule],
+  imports: [CommonModule, RouterLink, FilterBarComponent],
   template: `
     <div class="container-fluid animate-fade-in">
       <!-- Header -->
@@ -23,52 +23,25 @@ import Swal from 'sweetalert2';
           </h1>
           <p class="csu-page-subtitle">Enregistrez et gérez les dossiers de patients pour la CSU</p>
         </div>
-        <div>
+        <div class="d-flex gap-2 flex-wrap">
+          <button class="csu-btn csu-btn-light" (click)="exportPdf()" [disabled]="exporting">
+            <i class="bi bi-file-earmark-pdf"></i> PDF
+          </button>
+          <button class="csu-btn csu-btn-light" (click)="exportExcel()" [disabled]="exporting">
+            <i class="bi bi-file-earmark-excel"></i> Excel
+          </button>
           <a routerLink="/patients/nouveau" class="csu-btn csu-btn-primary">
             <i class="bi bi-plus-lg"></i> Nouveau Patient
           </a>
         </div>
       </div>
 
-      <!-- Search & Filters -->
-      <div class="csu-card mb-4">
-        <form [formGroup]="filterForm" (ngSubmit)="onSearch()" class="row g-3">
-          <div class="col-12 col-md-4">
-            <div class="csu-search-input">
-              <i class="bi bi-search"></i>
-              <input
-                type="text"
-                placeholder="Rechercher par nom, prénom ou N° dossier..."
-                formControlName="search"
-              />
-            </div>
-          </div>
-          <div class="col-6 col-md-3">
-            <select class="csu-form-control csu-form-select" formControlName="region">
-              <option value="">Toutes les régions</option>
-              <option value="Dakar">Dakar</option>
-              <option value="Thiès">Thiès</option>
-              <option value="Diourbel">Diourbel</option>
-              <option value="Saint-Louis">Saint-Louis</option>
-            </select>
-          </div>
-          <div class="col-6 col-md-3">
-            <select class="csu-form-control csu-form-select" formControlName="sexe">
-              <option value="">Tous les sexes</option>
-              <option value="M">Masculin</option>
-              <option value="F">Féminin</option>
-            </select>
-          </div>
-          <div class="col-12 col-md-2 d-flex gap-2">
-            <button type="submit" class="csu-btn csu-btn-primary w-100">
-              Filtrer
-            </button>
-            <button type="button" class="csu-btn csu-btn-light" (click)="onReset()">
-              <i class="bi bi-arrow-counterclockwise"></i>
-            </button>
-          </div>
-        </form>
-      </div>
+      <!-- Filtres épurés -->
+      <app-filter-bar
+        searchPlaceholder="Rechercher par nom, prénom ou N° dossier..."
+        [filterGroups]="filterGroups"
+        (filterChange)="onFilterChange($event)"
+      ></app-filter-bar>
 
       <!-- Table -->
       <div class="csu-table-wrapper">
@@ -171,7 +144,6 @@ import Swal from 'sweetalert2';
 export class PatientListComponent implements OnInit {
   private patientService = inject(PatientService);
   private authService = inject(AuthService);
-  private fb = inject(FormBuilder);
 
 
   patients: Patient[] = [];
@@ -184,27 +156,56 @@ export class PatientListComponent implements OnInit {
   totalPages = 0;
   Math = Math;
 
-  filterForm = this.fb.group({
-    search: [''],
-    region: [''],
-    sexe: ['']
-  });
+  exporting = false;
+
+  // Critères de filtre courants
+  filters: FilterValues & { search: string } = { search: '', region: '', sexe: '', categorie: '' };
+
+  filterGroups: FilterGroup[] = [
+    {
+      key: 'categorie',
+      label: 'Catégorie',
+      options: [
+        { value: 'plan-sesame', label: 'Plan Sésame' },
+        { value: '0-5ans', label: '0 à 5 ans' },
+        { value: 'classique', label: 'Classique' },
+        { value: 'cesarienne', label: 'Césarienne' }
+      ]
+    },
+    {
+      key: 'region',
+      label: 'Région',
+      options: [
+        { value: 'Dakar', label: 'Dakar' },
+        { value: 'Thiès', label: 'Thiès' },
+        { value: 'Diourbel', label: 'Diourbel' },
+        { value: 'Saint-Louis', label: 'Saint-Louis' }
+      ]
+    },
+    {
+      key: 'sexe',
+      label: 'Sexe',
+      options: [
+        { value: 'M', label: 'Masculin' },
+        { value: 'F', label: 'Féminin' }
+      ]
+    }
+  ];
 
   ngOnInit(): void {
     this.loadPatients();
   }
 
+  onFilterChange(values: FilterValues & { search: string }): void {
+    this.filters = values;
+    this.page = 0;
+    this.loadPatients();
+  }
+
   loadPatients(): void {
     this.loading = true;
-    const { search, region, sexe } = this.filterForm.value;
 
-    const searchCriteria = {
-      search: search || '',
-      region: region || '',
-      sexe: sexe || ''
-    };
-
-    this.patientService.searchPatients(searchCriteria, this.page, this.size).subscribe({
+    this.patientService.searchPatients(this.currentCriteria(), this.page, this.size).subscribe({
       next: (res) => {
         this.patients = res.content;
         this.totalElements = res.totalElements;
@@ -226,19 +227,35 @@ export class PatientListComponent implements OnInit {
     });
   }
 
-  onSearch(): void {
-    this.page = 0;
-    this.loadPatients();
+  private currentCriteria(): any {
+    return {
+      search: this.filters.search || '',
+      region: this.filters['region'] || '',
+      sexe: this.filters['sexe'] || '',
+      categorie: this.filters['categorie'] || ''
+    };
   }
 
-  onReset(): void {
-    this.filterForm.reset({
-      search: '',
-      region: '',
-      sexe: ''
+  exportPdf(): void {
+    this.exporting = true;
+    this.patientService.exportPdf(this.currentCriteria()).subscribe({
+      next: () => { this.exporting = false; },
+      error: () => {
+        this.exporting = false;
+        Swal.fire('Erreur', "L'export PDF a échoué. Vérifiez votre connexion au serveur.", 'error');
+      }
     });
-    this.page = 0;
-    this.loadPatients();
+  }
+
+  exportExcel(): void {
+    this.exporting = true;
+    this.patientService.exportExcel(this.currentCriteria()).subscribe({
+      next: () => { this.exporting = false; },
+      error: () => {
+        this.exporting = false;
+        Swal.fire('Erreur', "L'export Excel a échoué. Vérifiez votre connexion au serveur.", 'error');
+      }
+    });
   }
 
   onPageChange(newPage: number): void {

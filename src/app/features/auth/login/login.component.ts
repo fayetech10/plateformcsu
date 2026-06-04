@@ -10,515 +10,142 @@ import Swal from 'sweetalert2';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   template: `
-    <div class="login-container">
-      <!-- Animated gradient background -->
-      <div class="animated-bg"></div>
-      
-      <!-- Floating orbs -->
-      <div class="orb orb-1"></div>
-      <div class="orb orb-2"></div>
-      <div class="orb orb-3"></div>
+    <div class="auth-container">
+      <!-- Panneau latéral branding -->
+      <div class="auth-aside">
+        <div class="aside-content">
+          <img src="assets/logo.png" alt="CSU" class="aside-logo" />
+          <h2>Plateforme CSU</h2>
+          <p>Système de gestion de la Couverture Sanitaire Universelle — patients, enrôlements, activités et suivi des bureaux.</p>
+          <div class="aside-features">
+            <div class="feat"><i class="bi bi-people-fill"></i><span>Gestion des bénéficiaires</span></div>
+            <div class="feat"><i class="bi bi-geo-alt-fill"></i><span>Suivi des bureaux & présence</span></div>
+            <div class="feat"><i class="bi bi-graph-up-arrow"></i><span>Tableaux de bord & rapports</span></div>
+          </div>
+        </div>
+        <div class="aside-foot">© {{ year }} — Couverture Sanitaire Universelle</div>
+      </div>
 
-      <div class="login-wrapper">
-        <div class="login-card">
-          <!-- Branding -->
-          <div class="brand">
-            <div class="logo">
-              <img src="assets/logo.png" alt="CSU" class="logo-img" />
-            </div>
-            <h1 class="title">Plateforme CSU</h1>
-            <p class="subtitle">Couverture Sanitaire Universelle</p>
+      <!-- Formulaire -->
+      <div class="auth-main">
+        <div class="auth-card">
+          <div class="head">
+            <img src="assets/logo.png" alt="CSU" class="head-logo" />
+            <h1>Bienvenue 👋</h1>
+            <p class="muted">Connectez-vous pour accéder à votre espace</p>
           </div>
 
-          <!-- Error alert -->
           @if (errorMsg) {
-            <div class="alert alert-error">
+            <div class="alert-error">
               <i class="bi bi-exclamation-triangle-fill"></i>
               <span>{{ errorMsg }}</span>
-              <button class="alert-close" (click)="errorMsg = ''">&times;</button>
+              <button (click)="errorMsg = ''">&times;</button>
             </div>
           }
 
-          <!-- Login form -->
-          <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
-            <div class="input-group">
-              <div class="input-icon">
+          <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="form">
+            <div class="field">
+              <label>Identifiant</label>
+              <div class="control">
                 <i class="bi bi-person"></i>
+                <input type="text" formControlName="username" placeholder="Votre identifiant" autocomplete="username" />
               </div>
-              <div class="input-field">
-                <input
-                  type="text"
-                  formControlName="username"
-                  placeholder=" "
-                  autocomplete="username"
-                  [class.filled]="loginForm.get('username')?.value"
-                />
-                <label>Identifiant</label>
-              </div>
-              @if (isFieldInvalid('username')) {
-                <div class="input-error">L'identifiant est requis</div>
-              }
+              @if (isFieldInvalid('username')) { <span class="err">L'identifiant est requis</span> }
             </div>
 
-            <div class="input-group">
-              <div class="input-icon">
+            <div class="field">
+              <label>Mot de passe</label>
+              <div class="control">
                 <i class="bi bi-lock"></i>
+                <input [type]="showPassword ? 'text' : 'password'" formControlName="password" placeholder="Votre mot de passe" autocomplete="current-password" />
+                <button type="button" (click)="togglePasswordVisibility()"><i class="bi" [class.bi-eye]="!showPassword" [class.bi-eye-slash]="showPassword"></i></button>
               </div>
-              <div class="input-field">
-                <input
-                  [type]="showPassword ? 'text' : 'password'"
-                  formControlName="password"
-                  placeholder=" "
-                  autocomplete="current-password"
-                  [class.filled]="loginForm.get('password')?.value"
-                />
-                <label>Mot de passe</label>
-                <button type="button" class="password-toggle" (click)="togglePasswordVisibility()">
-                  <i class="bi" [class.bi-eye]="!showPassword" [class.bi-eye-slash]="showPassword"></i>
-                </button>
-              </div>
-              @if (isFieldInvalid('password')) {
-                <div class="input-error">Le mot de passe est requis</div>
-              }
+              @if (isFieldInvalid('password')) { <span class="err">Le mot de passe est requis</span> }
             </div>
 
-            <div class="form-footer">
+            <div class="row-between">
               <label class="checkbox">
                 <input type="checkbox" formControlName="rememberMe" />
-                <span class="checkmark"></span>
+                <span class="box"></span>
                 Se souvenir de moi
               </label>
-              <a (click)="onForgotPassword()" class="forgot-link">Mot de passe oublié ?</a>
+              <a (click)="onForgotPassword()" class="link">Mot de passe oublié ?</a>
             </div>
 
-            <button type="submit" class="btn-login" [disabled]="loading">
-              @if (loading) {
-                <div class="spinner"></div>
-                <span>Connexion...</span>
-              } @else {
-                <span>Se connecter</span>
-                <i class="bi bi-arrow-right"></i>
-              }
+            <button type="submit" class="btn-primary" [disabled]="loading">
+              @if (loading) { <span class="spin"></span> Connexion... }
+              @else { Se connecter <i class="bi bi-arrow-right"></i> }
             </button>
           </form>
 
-          <div class="secure-footer">
-            <i class="bi bi-shield-lock-fill"></i>
-            <span>Connexion sécurisée</span>
-          </div>
-        </div>
-
-        <div class="support-footer">
-          <span>Besoin d'aide ?</span>
-          <a href="#">Contacter le support</a>
+          <div class="secure"><i class="bi bi-shield-lock-fill"></i> Connexion sécurisée</div>
         </div>
       </div>
     </div>
   `,
   styles: [`
-    /* ----- GLOBAL RESET & FONTS ----- */
-    :host {
-      display: block;
-      height: 100vh;
-      font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
-    }
+    :host { display: block; height: 100vh; font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+    .auth-container { display: flex; height: 100%; }
 
-    /* ----- CONTAINER ----- */
-    .login-container {
-      position: relative;
-      height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-      background: #0a0c12;
+    /* ----- Panneau latéral ----- */
+    .auth-aside {
+      flex: 1.1; position: relative; display: flex; flex-direction: column; justify-content: space-between;
+      background: linear-gradient(150deg, #00422c 0%, #00744d 45%, #00b06e 100%);
+      color: #fff; overflow: hidden; padding: 3rem 3.5rem;
     }
+    .auth-aside::before, .auth-aside::after { content: ''; position: absolute; border-radius: 50%; background: rgba(255,255,255,0.07); }
+    .auth-aside::before { width: 420px; height: 420px; top: -140px; right: -120px; }
+    .auth-aside::after { width: 320px; height: 320px; bottom: -120px; left: -90px; }
+    .aside-content { position: relative; z-index: 2; margin: auto 0; max-width: 440px; }
+    .aside-logo { width: 76px; height: 76px; object-fit: contain; background: #fff; border-radius: 20px; padding: 10px; margin-bottom: 1.75rem; box-shadow: 0 12px 30px rgba(0,0,0,0.2); }
+    .aside-content h2 { font-size: 2.2rem; font-weight: 800; margin: 0 0 0.85rem; letter-spacing: -0.5px; }
+    .aside-content p { opacity: 0.92; line-height: 1.65; font-size: 1.02rem; }
+    .aside-features { margin-top: 2rem; display: flex; flex-direction: column; gap: 0.9rem; }
+    .feat { display: flex; align-items: center; gap: 0.8rem; font-weight: 500; }
+    .feat i { width: 38px; height: 38px; border-radius: 10px; background: rgba(255,255,255,0.15); display: inline-flex; align-items: center; justify-content: center; font-size: 1.05rem; flex-shrink: 0; }
+    .aside-foot { position: relative; z-index: 2; font-size: 0.78rem; opacity: 0.7; }
 
-    /* Animated gradient background */
-    .animated-bg {
-      position: absolute;
-      inset: 0;
-      background: radial-gradient(circle at 20% 30%, rgba(0, 135, 90, 0.15), transparent 50%),
-                  radial-gradient(circle at 80% 70%, rgba(0, 198, 123, 0.1), transparent 50%);
-      animation: bgShift 12s ease infinite;
-    }
+    /* ----- Formulaire ----- */
+    .auth-main { flex: 1; display: flex; align-items: center; justify-content: center; background: #f4f7f6; padding: 2rem; }
+    .auth-card { width: 100%; max-width: 420px; background: #fff; border-radius: 24px; padding: 2.5rem 2.25rem; box-shadow: 0 20px 50px -22px rgba(0,0,0,0.25); animation: rise 0.5s ease; }
+    @keyframes rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+    .head { text-align: center; margin-bottom: 1.75rem; }
+    .head-logo { width: 56px; height: 56px; object-fit: contain; margin-bottom: 0.75rem; display: none; }
+    .head h1 { font-size: 1.6rem; font-weight: 800; margin: 0; color: #1a1a2e; }
+    .muted { color: #6b7280; font-size: 0.9rem; margin-top: 0.3rem; }
 
-    @keyframes bgShift {
-      0% { opacity: 0.6; transform: scale(1); }
-      50% { opacity: 1; transform: scale(1.02); }
-      100% { opacity: 0.6; transform: scale(1); }
-    }
+    .alert-error { display: flex; align-items: center; gap: 0.6rem; background: #fdecea; border: 1px solid #f5c6c2; color: #b3261e; padding: 0.8rem 1rem; border-radius: 14px; font-size: 0.85rem; margin-bottom: 1.25rem; }
+    .alert-error button { margin-left: auto; background: none; border: none; color: inherit; font-size: 1.2rem; cursor: pointer; line-height: 1; }
 
-    /* Floating orbs */
-    .orb {
-      position: absolute;
-      border-radius: 50%;
-      filter: blur(60px);
-      opacity: 0.4;
-      animation: float 20s infinite alternate;
-    }
-    .orb-1 {
-      width: 300px;
-      height: 300px;
-      background: #00875a;
-      top: -100px;
-      right: -50px;
-      animation-duration: 18s;
-    }
-    .orb-2 {
-      width: 250px;
-      height: 250px;
-      background: #00c67b;
-      bottom: -80px;
-      left: -40px;
-      animation-duration: 22s;
-      animation-delay: -5s;
-    }
-    .orb-3 {
-      width: 200px;
-      height: 200px;
-      background: #1e3a3a;
-      top: 40%;
-      left: 20%;
-      animation-duration: 25s;
-      animation-delay: -10s;
-      opacity: 0.3;
-    }
-    @keyframes float {
-      0% { transform: translate(0, 0) scale(1); }
-      100% { transform: translate(30px, -30px) scale(1.1); }
-    }
+    .form { display: flex; flex-direction: column; gap: 1.1rem; }
+    .field label { display: block; font-size: 0.82rem; font-weight: 600; color: #374151; margin-bottom: 0.4rem; }
+    .control { position: relative; display: flex; align-items: center; }
+    .control > i { position: absolute; left: 14px; color: #9ca3af; }
+    .control input { width: 100%; padding: 0.85rem 2.6rem; border: 1.5px solid #e5e7eb; border-radius: 14px; font-size: 0.95rem; outline: none; transition: all 0.2s; }
+    .control input:focus { border-color: #00c67b; box-shadow: 0 0 0 4px rgba(0,198,123,0.12); }
+    .control button { position: absolute; right: 12px; background: none; border: none; color: #9ca3af; cursor: pointer; font-size: 1rem; }
+    .err { display: block; color: #dc2626; font-size: 0.74rem; margin-top: 0.35rem; }
 
-    /* ----- LOGIN WRAPPER ----- */
-    .login-wrapper {
-      position: relative;
-      z-index: 10;
-      width: 100%;
-      max-width: 440px;
-      padding: 1.5rem;
-      animation: fadeInUp 0.8s cubic-bezier(0.2, 0.9, 0.4, 1.1);
-    }
+    .row-between { display: flex; align-items: center; justify-content: space-between; font-size: 0.85rem; }
+    .checkbox { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; color: #4b5563; user-select: none; }
+    .checkbox input { display: none; }
+    .box { width: 18px; height: 18px; border: 2px solid #cbd5e1; border-radius: 5px; position: relative; transition: all 0.2s; }
+    .checkbox input:checked + .box { background: #00c67b; border-color: #00c67b; }
+    .checkbox input:checked + .box::after { content: ''; position: absolute; left: 5px; top: 1px; width: 4px; height: 9px; border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg); }
+    .link { color: #00875a; font-weight: 600; cursor: pointer; text-decoration: none; }
+    .link:hover { text-decoration: underline; }
 
-    @keyframes fadeInUp {
-      from {
-        opacity: 0;
-        transform: translateY(30px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
+    .btn-primary { margin-top: 0.4rem; width: 100%; padding: 0.9rem; border: none; border-radius: 40px; background: linear-gradient(105deg, #00875a, #00c67b); color: #fff; font-weight: 700; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.6rem; box-shadow: 0 8px 20px rgba(0,135,90,0.3); transition: all 0.25s; }
+    .btn-primary:hover:not(:disabled) { filter: brightness(1.05); transform: translateY(-1px); box-shadow: 0 12px 26px rgba(0,135,90,0.4); }
+    .btn-primary:disabled { opacity: 0.65; cursor: not-allowed; }
+    .spin { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.4); border-top-color: #fff; border-radius: 50%; animation: s 0.7s linear infinite; }
+    @keyframes s { to { transform: rotate(360deg); } }
 
-    /* ----- CARD ----- */
-    .login-card {
-      background: rgba(18, 22, 30, 0.75);
-      backdrop-filter: blur(16px);
-      border-radius: 32px;
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      padding: 2.5rem 2rem 2rem;
-      box-shadow: 0 25px 45px -12px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
-      transition: transform 0.3s ease, box-shadow 0.3s ease;
-    }
+    .secure { margin-top: 1.75rem; text-align: center; font-size: 0.74rem; color: #9ca3af; display: flex; align-items: center; justify-content: center; gap: 0.4rem; border-top: 1px solid #eef2f1; padding-top: 1.25rem; }
 
-    .login-card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 30px 55px -15px rgba(0, 0, 0, 0.6);
-    }
-
-    /* Branding */
-    .brand {
-      text-align: center;
-      margin-bottom: 2rem;
-    }
-    .logo {
-      display: inline-flex;
-      justify-content: center;
-      margin-bottom: 1rem;
-    }
-    .logo-img {
-      width: 85px;
-      height: 85px;
-      object-fit: contain;
-      filter: drop-shadow(0 8px 20px rgba(0, 135, 90, 0.4));
-      transition: filter 0.3s;
-    }
-    .title {
-      font-size: 1.8rem;
-      font-weight: 700;
-      background: linear-gradient(135deg, #ffffff, #a0f0d0);
-      background-clip: text;
-      -webkit-background-clip: text;
-      color: transparent;
-      margin: 0;
-      letter-spacing: -0.5px;
-    }
-    .subtitle {
-      font-size: 0.85rem;
-      color: rgba(255, 255, 255, 0.5);
-      margin-top: 0.25rem;
-    }
-
-    /* Alerts */
-    .alert {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      padding: 0.9rem 1rem;
-      border-radius: 20px;
-      margin-bottom: 1.5rem;
-      font-size: 0.85rem;
-      backdrop-filter: blur(8px);
-    }
-    .alert-error {
-      background: rgba(229, 57, 53, 0.12);
-      border: 1px solid rgba(229, 57, 53, 0.3);
-      color: #ffb4a2;
-    }
-    .alert-close {
-      margin-left: auto;
-      background: none;
-      border: none;
-      color: inherit;
-      font-size: 1.2rem;
-      cursor: pointer;
-      opacity: 0.6;
-      transition: opacity 0.2s;
-    }
-    .alert-close:hover { opacity: 1; }
-
-    /* ----- FORM ----- */
-    .login-form {
-      display: flex;
-      flex-direction: column;
-      gap: 1.5rem;
-    }
-
-    /* Input groups */
-    .input-group {
-      position: relative;
-    }
-    .input-icon {
-      position: absolute;
-      left: 14px;
-      top: 50%;
-      transform: translateY(-50%);
-      z-index: 2;
-      color: rgba(255, 255, 255, 0.3);
-      transition: color 0.2s;
-      pointer-events: none;
-    }
-    .input-field {
-      position: relative;
-      width: 100%;
-    }
-    .input-field input {
-      width: 100%;
-      background: rgba(255, 255, 255, 0.03);
-      border: 1.5px solid rgba(255, 255, 255, 0.08);
-      border-radius: 20px;
-      padding: 1rem 1rem 1rem 2.7rem;
-      font-size: 0.95rem;
-      color: #fff;
-      outline: none;
-      transition: all 0.25s ease;
-      font-family: inherit;
-    }
-    .input-field input:focus {
-      border-color: #00c67b;
-      background: rgba(0, 198, 123, 0.05);
-      box-shadow: 0 0 0 4px rgba(0, 198, 123, 0.1);
-    }
-    .input-field input:focus + label,
-    .input-field input.filled + label {
-      transform: translateY(-1.85rem) translateX(-0.5rem) scale(0.85);
-      color: #00c67b;
-    }
-    .input-field label {
-      position: absolute;
-      left: 2.7rem;
-      top: 50%;
-      transform: translateY(-50%);
-      color: rgba(255, 255, 255, 0.45);
-      pointer-events: none;
-      transition: all 0.2s ease;
-      font-size: 0.95rem;
-      background: transparent;
-      padding: 0 4px;
-    }
-    .password-toggle {
-      position: absolute;
-      right: 16px;
-      top: 50%;
-      transform: translateY(-50%);
-      background: none;
-      border: none;
-      color: rgba(255, 255, 255, 0.4);
-      cursor: pointer;
-      font-size: 1.1rem;
-      transition: color 0.2s;
-    }
-    .password-toggle:hover {
-      color: #00c67b;
-    }
-    .input-error {
-      font-size: 0.7rem;
-      color: #ff8a7a;
-      margin-top: 0.5rem;
-      margin-left: 0.8rem;
-      display: flex;
-      align-items: center;
-      gap: 0.3rem;
-    }
-    .input-error::before {
-      content: '⚠';
-      font-size: 0.7rem;
-    }
-
-    /* Footer options */
-    .form-footer {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      font-size: 0.85rem;
-      margin-top: 0.2rem;
-    }
-    .checkbox {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      cursor: pointer;
-      color: rgba(255, 255, 255, 0.6);
-      user-select: none;
-    }
-    .checkbox input {
-      display: none;
-    }
-    .checkmark {
-      width: 18px;
-      height: 18px;
-      border: 2px solid rgba(255, 255, 255, 0.3);
-      border-radius: 5px;
-      display: inline-block;
-      position: relative;
-      transition: all 0.2s;
-    }
-    .checkbox input:checked + .checkmark {
-      background: #00c67b;
-      border-color: #00c67b;
-    }
-    .checkbox input:checked + .checkmark::after {
-      content: '';
-      position: absolute;
-      left: 5px;
-      top: 2px;
-      width: 4px;
-      height: 8px;
-      border: solid white;
-      border-width: 0 2px 2px 0;
-      transform: rotate(45deg);
-    }
-    .forgot-link {
-      color: #00c67b;
-      text-decoration: none;
-      font-weight: 500;
-      cursor: pointer;
-      transition: color 0.2s;
-    }
-    .forgot-link:hover {
-      color: #7effcf;
-      text-decoration: underline;
-    }
-
-    /* Login button */
-    .btn-login {
-      width: 100%;
-      padding: 0.9rem;
-      background: linear-gradient(105deg, #00875a 0%, #00c67b 100%);
-      border: none;
-      border-radius: 40px;
-      font-weight: 700;
-      font-size: 1rem;
-      color: white;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.75rem;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      box-shadow: 0 8px 20px rgba(0, 135, 90, 0.3);
-      font-family: inherit;
-      letter-spacing: 0.3px;
-    }
-    .btn-login:hover:not(:disabled) {
-      transform: scale(1.02);
-      box-shadow: 0 12px 28px rgba(0, 135, 90, 0.5);
-      filter: brightness(1.05);
-    }
-    .btn-login:active {
-      transform: scale(0.98);
-    }
-    .btn-login:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
-    .spinner {
-      width: 18px;
-      height: 18px;
-      border: 2px solid rgba(255,255,255,0.3);
-      border-top-color: white;
-      border-radius: 50%;
-      animation: spin 0.7s linear infinite;
-    }
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-
-    /* Secure footer */
-    .secure-footer {
-      margin-top: 2rem;
-      text-align: center;
-      font-size: 0.7rem;
-      color: rgba(255, 255, 255, 0.25);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.4rem;
-      border-top: 1px solid rgba(255,255,255,0.05);
-      padding-top: 1.5rem;
-    }
-    .support-footer {
-      text-align: center;
-      margin-top: 1.5rem;
-      font-size: 0.8rem;
-      color: rgba(255, 255, 255, 0.35);
-    }
-    .support-footer a {
-      color: rgba(255, 255, 255, 0.7);
-      margin-left: 0.3rem;
-      text-decoration: none;
-      font-weight: 500;
-    }
-    .support-footer a:hover {
-      color: #fff;
-    }
-
-    /* Responsive adjustments */
-    @media (max-width: 480px) {
-      .login-wrapper { padding: 1rem; }
-      .login-card { padding: 1.8rem 1.5rem; }
-      .title { font-size: 1.5rem; }
-      .logo-img { width: 70px; height: 70px; }
-      .form-footer { flex-direction: column; align-items: flex-start; gap: 0.8rem; }
-    }
-
-    /* Reduced motion */
-    @media (prefers-reduced-motion: reduce) {
-      .animated-bg, .orb, .login-card, .btn-login {
-        animation: none;
-        transition: none;
-        transform: none;
-      }
+    @media (max-width: 860px) {
+      .auth-aside { display: none; }
+      .head-logo { display: inline-block; }
     }
   `]
 })
@@ -537,16 +164,13 @@ export class LoginComponent implements OnInit {
   loading = false;
   showPassword = false;
   errorMsg = '';
+  year = new Date().getFullYear();
 
   ngOnInit(): void {
-    // Load remembered username if it exists
     if (typeof window !== 'undefined') {
       const rememberedUsername = localStorage.getItem('csu_remember_username');
       if (rememberedUsername) {
-        this.loginForm.patchValue({
-          username: rememberedUsername,
-          rememberMe: true
-        });
+        this.loginForm.patchValue({ username: rememberedUsername, rememberMe: true });
       }
     }
   }
@@ -575,8 +199,7 @@ export class LoginComponent implements OnInit {
       .subscribe({
         next: (user) => {
           this.loading = false;
-          
-          // Handle "Remember Me" locally
+
           if (typeof window !== 'undefined') {
             if (rememberMe) {
               localStorage.setItem('csu_remember_username', username!);
@@ -584,7 +207,19 @@ export class LoginComponent implements OnInit {
               localStorage.removeItem('csu_remember_username');
             }
           }
-          
+
+          // Changement obligatoire du mot de passe par défaut
+          if (user.doitChangerMotDePasse) {
+            this.router.navigate(['/changer-mot-de-passe']);
+            Swal.fire({
+              icon: 'info',
+              title: 'Action requise',
+              text: 'Pour votre sécurité, veuillez changer votre mot de passe par défaut.',
+              confirmButtonColor: '#00875A'
+            });
+            return;
+          }
+
           const returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/dashboard';
           this.router.navigateByUrl(returnUrl);
           Swal.fire({
@@ -624,28 +259,10 @@ export class LoginComponent implements OnInit {
       }
     }).then((result) => {
       if (result.isConfirmed) {
-        Swal.fire({
-          title: 'Envoi en cours...',
-          allowOutsideClick: false,
-          didOpen: () => Swal.showLoading()
-        });
+        Swal.fire({ title: 'Envoi en cours...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
         this.authService.resetPassword({ email: result.value }).subscribe({
-          next: () => {
-            Swal.fire({
-              title: 'Email envoyé',
-              text: 'Si cet email existe, vous recevrez un lien de réinitialisation.',
-              icon: 'success',
-              confirmButtonColor: '#00875A'
-            });
-          },
-          error: () => {
-            Swal.fire({
-              title: 'Email envoyé',
-              text: 'Si cet email existe, vous recevrez un lien de réinitialisation.',
-              icon: 'success',
-              confirmButtonColor: '#00875A'
-            });
-          }
+          next: () => Swal.fire({ title: 'Email envoyé', text: 'Si cet email existe, vous recevrez un lien de réinitialisation.', icon: 'success', confirmButtonColor: '#00875A' }),
+          error: () => Swal.fire({ title: 'Email envoyé', text: 'Si cet email existe, vous recevrez un lien de réinitialisation.', icon: 'success', confirmButtonColor: '#00875A' })
         });
       }
     });

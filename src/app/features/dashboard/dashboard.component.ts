@@ -2,28 +2,28 @@ import { Component, OnInit, AfterViewInit, ElementRef, ViewChild, inject, PLATFO
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { DashboardService } from '../../core/services/dashboard.service';
 import { DashboardStats } from '../../core/models/dashboard.model';
+import { AuthService } from '../../core/services/auth.service';
 import { RouterLink } from '@angular/router';
 import { Chart, registerables } from 'chart.js';
+import { PointageReminderComponent } from '../pointage/pointage-reminder.component';
+import { AgentNotificationsComponent } from '../pointage/agent-notifications.component';
+import { ActivitesAVenirComponent } from '../activites/activites-a-venir.component';
+import { PatientChartsComponent } from '../patients/patient-charts.component';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, PointageReminderComponent, AgentNotificationsComponent, ActivitesAVenirComponent, PatientChartsComponent],
   template: `
     <div class="container-fluid animate-fade-in">
-      <!-- Header -->
+      <!-- Rappel de pointage (visible dès l'entrée sur la plateforme) -->
+      <app-pointage-reminder />
+
+      <!-- Header personnalisé -->
       <div class="csu-page-header">
         <div>
-          <h1 class="csu-page-title">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--csu-primary)">
-              <rect x="3" y="3" width="7" height="7" rx="1"/>
-              <rect x="14" y="3" width="7" height="7" rx="1"/>
-              <rect x="3" y="14" width="7" height="7" rx="1"/>
-              <rect x="14" y="14" width="7" height="7" rx="1"/>
-            </svg>
-            Tableau de Bord
-          </h1>
-          <p class="csu-page-subtitle">Vue d'ensemble de vos activités CSU</p>
+          <h1 class="csu-page-title">{{ greeting }}, {{ prenom }} 👋</h1>
+          <p class="csu-page-subtitle">{{ today | date:'EEEE d MMMM y' }} — voici votre activité du jour</p>
         </div>
         <div class="d-flex gap-2">
           <button (click)="triggerNewAction()" class="csu-btn csu-btn-primary">
@@ -34,6 +34,26 @@ import { Chart, registerables } from 'chart.js';
             Nouveau
           </button>
         </div>
+      </div>
+
+      <!-- Actions rapides -->
+      <div class="quick-actions">
+        <a routerLink="/patients/nouveau" class="qa-btn">
+          <span class="qa-ico patients"><i class="bi bi-person-plus-fill"></i></span>
+          <span>Nouveau patient</span>
+        </a>
+        <a routerLink="/enrolements/nouveau" class="qa-btn">
+          <span class="qa-ico enrol"><i class="bi bi-person-check-fill"></i></span>
+          <span>Nouvel enrôlement</span>
+        </a>
+        <a routerLink="/activites/nouveau" class="qa-btn">
+          <span class="qa-ico act"><i class="bi bi-calendar-plus-fill"></i></span>
+          <span>Nouvelle activité</span>
+        </a>
+        <a routerLink="/constats/nouveau" class="qa-btn">
+          <span class="qa-ico constat"><i class="bi bi-clipboard-plus-fill"></i></span>
+          <span>Nouveau constat</span>
+        </a>
       </div>
 
       <!-- KPI Grid — Modern Minimal Cards -->
@@ -201,9 +221,38 @@ import { Chart, registerables } from 'chart.js';
           </div>
         </div>
       </div>
+
+      <!-- Statistiques visuelles des patients -->
+      <app-patient-charts />
+
+      <div class="row g-4 mb-4">
+        <!-- Prochaines activités planifiées -->
+        <div class="col-12 col-lg-6">
+          <app-activites-a-venir />
+        </div>
+        <!-- Actions concernant l'agent (réponses de l'administration) -->
+        <div class="col-12 col-lg-6">
+          <app-agent-notifications />
+        </div>
+      </div>
     </div>
   `,
   styles: [`
+    /* ── Quick actions ── */
+    .quick-actions { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1.5rem; }
+    .quick-actions .qa-btn {
+      flex: 1; min-width: 180px; display: flex; align-items: center; gap: 0.7rem;
+      background: #fff; border: 1px solid rgba(0,0,0,0.05); border-radius: 14px;
+      padding: 0.85rem 1rem; text-decoration: none; color: var(--csu-text); font-weight: 600;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04); transition: all 0.2s ease;
+    }
+    .quick-actions .qa-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.08); color: var(--csu-primary); }
+    .qa-ico { width: 38px; height: 38px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; }
+    .qa-ico.patients { background: rgba(21,101,192,0.1); color: #1565C0; }
+    .qa-ico.enrol { background: rgba(0,135,90,0.1); color: #00875A; }
+    .qa-ico.act { background: rgba(123,31,162,0.1); color: #7B1FA2; }
+    .qa-ico.constat { background: rgba(245,124,0,0.1); color: #F57C00; }
+
     /* ── KPI Grid ── */
     .kpi-grid-container {
       width: 100%;
@@ -439,12 +488,25 @@ import { Chart, registerables } from 'chart.js';
 })
 export class DashboardComponent implements OnInit, AfterViewInit {
   private dashboardService = inject(DashboardService);
+  private authService = inject(AuthService);
   private platformId = inject(PLATFORM_ID);
 
   @ViewChild('monthlyChartCanvas') monthlyChartCanvas!: ElementRef<HTMLCanvasElement>;
 
   stats?: DashboardStats;
   chart: any;
+  today = new Date();
+
+  get prenom(): string {
+    return this.authService.currentUserValue?.prenom || 'Agent';
+  }
+
+  get greeting(): string {
+    const h = new Date().getHours();
+    if (h < 12) return 'Bonjour';
+    if (h < 18) return 'Bon après-midi';
+    return 'Bonsoir';
+  }
 
   triggerNewAction(): void {
     window.dispatchEvent(new CustomEvent('csu:open-quick-menu'));

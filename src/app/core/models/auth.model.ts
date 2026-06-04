@@ -13,8 +13,15 @@ export interface LoginResponse {
   bureau_id?: number;
   structure_id?: number;
   bureauCsuNom?: string;
+  structureNom?: string;
+  doitChangerMotDePasse?: boolean;
 }
 
 export interface ResetPasswordRequest {
   email: string;
+}
+
+export interface ChangePasswordRequest {
+  ancienMotDePasse: string;
+  nouveauMotDePasse: string;
 }

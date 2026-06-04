@@ -16,6 +16,8 @@ export interface Utilisateur {
   // Le backend répond avec bureauId (nom du champ en base)
   bureauId?: number;
   bureauCsu?: BureauCsu;
+  // Le backend renvoie le nom du bureau résolu
+  bureauCsuNom?: string;
   structureId?: number;
   actif: boolean;
   dateCreation?: string;

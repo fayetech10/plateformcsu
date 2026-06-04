@@ -1,5 +1,14 @@
 export type TypeActivite = 'SENSIBILISATION' | 'FORMATION' | 'REUNION' | 'VISITE_TERRAIN' | 'ASSISTANCE_ADMINISTRATIVE';
 
+export type StatutActivite = 'PLANIFIEE' | 'REALISEE' | 'ANNULEE';
+
+export interface ActiviteStats {
+  total: number;
+  totalParticipants: number;
+  parType: { [type: string]: number };
+  parStatut: { [statut: string]: number };
+}
+
 export interface CategorieActivite {
   id?: number;
   nom: string;
@@ -20,4 +29,5 @@ export interface Activite {
   bureauCsuNom?: string;
   categorieId?: number;
   categorieNom?: string;
+  statut?: StatutActivite;
 }

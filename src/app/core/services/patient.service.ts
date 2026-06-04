@@ -1,8 +1,11 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { tap } from 'rxjs/operators';
+import { saveAs } from 'file-saver';
 import { environment } from '../../../environments/environment';
 import { Patient } from '../models/patient.model';
+import { PatientStats } from '../models/patient-stats.model';
 
 @Injectable({
   providedIn: 'root'
@@ -41,6 +44,10 @@ export class PatientService {
     return this.http.get<Patient>(`${this.apiUrl}/${id}`);
   }
 
+  getStats(): Observable<PatientStats> {
+    return this.http.get<PatientStats>(`${this.apiUrl}/stats`);
+  }
+
   createPatient(patient: Patient): Observable<Patient> {
     return this.http.post<Patient>(this.apiUrl, patient);
   }
@@ -51,5 +58,26 @@ export class PatientService {
 
   deletePatient(id: number): Observable<any> {
     return this.http.delete(`${this.apiUrl}/${id}`);
+  }
+
+  private buildExportParams(criteria: any): HttpParams {
+    let params = new HttpParams();
+    Object.keys(criteria || {}).forEach(key => {
+      const v = criteria[key];
+      if (v !== null && v !== undefined && v !== '') {
+        params = params.set(key, v);
+      }
+    });
+    return params;
+  }
+
+  exportPdf(criteria: any): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/export/pdf`, { params: this.buildExportParams(criteria), responseType: 'blob' })
+      .pipe(tap(blob => saveAs(blob, `patients_${new Date().toISOString().slice(0, 10)}.pdf`)));
+  }
+
+  exportExcel(criteria: any): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/export/excel`, { params: this.buildExportParams(criteria), responseType: 'blob' })
+      .pipe(tap(blob => saveAs(blob, `patients_${new Date().toISOString().slice(0, 10)}.xlsx`)));
   }
 }

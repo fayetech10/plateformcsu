@@ -347,8 +347,14 @@ export class ConstatFormComponent implements OnInit {
 
     const selectedCat = this.categories.find(c => c.id === +formVal.categorieId);
 
+    // <input type="date"> renvoie "yyyy-MM-dd" → le backend attend un LocalDateTime
+    const dateConstat = formVal.dateConstat
+      ? (formVal.dateConstat.length === 10 ? `${formVal.dateConstat}T00:00:00` : formVal.dateConstat)
+      : null;
+
     const constatData = {
       ...formVal,
+      dateConstat,
       categorieId: +formVal.categorieId,
       categorieNom: selectedCat ? selectedCat.nom : '',
       archive: formVal.statut === 'ARCHIVE'
@@ -359,21 +365,19 @@ export class ConstatFormComponent implements OnInit {
         next: (res) => {
           this.uploadFilesIfAny(res.id || this.constatId!);
         },
-        error: () => {
+        error: (err) => {
           this.submitting = false;
-          Swal.fire('Modifié !', "Constat d'incident mis à jour (Simulation).", 'success')
-            .then(() => this.router.navigate(['/constats']));
+          Swal.fire('Erreur', err?.error?.message || "Impossible de mettre à jour le constat. Veuillez réessayer.", 'error');
         }
       });
     } else {
       this.constatService.createConstat(constatData).subscribe({
         next: (res) => {
-          this.uploadFilesIfAny(res.id || Math.floor(100 + Math.random() * 900));
+          this.uploadFilesIfAny(res.id!);
         },
-        error: () => {
+        error: (err) => {
           this.submitting = false;
-          Swal.fire('Signalé !', "Rapport d'incident créé (Simulation).", 'success')
-            .then(() => this.router.navigate(['/constats']));
+          Swal.fire('Erreur', err?.error?.message || "Impossible de signaler le constat. Veuillez réessayer.", 'error');
         }
       });
     }
@@ -391,9 +395,9 @@ export class ConstatFormComponent implements OnInit {
             confirmButtonColor: '#00875A'
           }).then(() => this.router.navigate(['/constats']));
         },
-        error: () => {
+        error: (err) => {
           this.submitting = false;
-          Swal.fire('Succès !', "Incident enregistré avec simulation d'envoi de pièces jointes.", 'success')
+          Swal.fire('Constat enregistré', "Le constat a été enregistré, mais l'envoi des pièces jointes a échoué : " + (err?.error?.message || 'réessayez depuis la fiche.'), 'warning')
             .then(() => this.router.navigate(['/constats']));
         }
       });

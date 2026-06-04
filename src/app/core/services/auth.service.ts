@@ -5,7 +5,7 @@ import { Observable, BehaviorSubject, of } from 'rxjs';
 import { tap, catchError } from 'rxjs/operators';
 import { jwtDecode } from 'jwt-decode';
 import { environment } from '../../../environments/environment';
-import { LoginRequest, LoginResponse, ResetPasswordRequest } from '../models/auth.model';
+import { LoginRequest, LoginResponse, ResetPasswordRequest, ChangePasswordRequest } from '../models/auth.model';
 
 interface DecodedToken {
   sub: string;
@@ -16,6 +16,8 @@ interface DecodedToken {
   bureau_id?: number;
   structure_id?: number;
   bureauCsuNom?: string;
+  structureNom?: string;
+  doitChangerMotDePasse?: boolean;
   exp: number;
 }
 
@@ -49,7 +51,9 @@ export class AuthService {
             agent_id: decoded.agent_id,
             bureau_id: decoded.bureau_id,
             structure_id: decoded.structure_id,
-            bureauCsuNom: decoded.bureauCsuNom
+            bureauCsuNom: decoded.bureauCsuNom,
+            structureNom: decoded.structureNom,
+            doitChangerMotDePasse: decoded.doitChangerMotDePasse
           };
           this.currentUserSubject.next(userResponse);
         } catch (e) {
@@ -92,6 +96,15 @@ export class AuthService {
 
   resetPassword(request: ResetPasswordRequest): Observable<any> {
     return this.http.post(`${this.apiUrl}/reset-password`, request);
+  }
+
+  changePassword(request: ChangePasswordRequest): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.apiUrl}/change-password`, request);
+  }
+
+  /** Vrai si l'utilisateur connecté doit changer son mot de passe par défaut. */
+  doitChangerMotDePasse(): boolean {
+    return !!this.currentUserValue?.doitChangerMotDePasse;
   }
 
   isLoggedIn(): boolean {

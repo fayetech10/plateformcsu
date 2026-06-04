@@ -113,13 +113,24 @@ import Swal from 'sweetalert2';
                       class="csu-form-control"
                       [class.is-invalid]="isFieldInvalid('nombreParticipants')"
                       formControlName="nombreParticipants"
-                      min="1"
+                      min="0"
                     />
                     @if (isFieldInvalid('nombreParticipants')) {
                       <div class="csu-invalid-feedback">
-                        <i class="bi bi-info-circle"></i> Entrez un nombre valide (&ge; 1)
+                        <i class="bi bi-info-circle"></i> Entrez un nombre valide (&ge; 0)
                       </div>
                     }
+                  </div>
+                </div>
+
+                <div class="col-12 col-md-6">
+                  <div class="csu-form-group">
+                    <label class="csu-form-label" for="statut">Statut <span class="text-danger">*</span></label>
+                    <select id="statut" class="csu-form-control csu-form-select" formControlName="statut">
+                      <option value="PLANIFIEE">📅 Planifiée</option>
+                      <option value="REALISEE">✅ Réalisée</option>
+                      <option value="ANNULEE">✖️ Annulée</option>
+                    </select>
                   </div>
                 </div>
 
@@ -206,7 +217,8 @@ export class ActiviteFormComponent implements OnInit {
     typeActivite: ['', [Validators.required]],
     categorieId: ['', [Validators.required]],
     dateActivite: [new Date().toISOString().split('T')[0], [Validators.required]],
-    nombreParticipants: [1, [Validators.required, Validators.min(1)]],
+    nombreParticipants: [1, [Validators.required, Validators.min(0)]],
+    statut: ['REALISEE', [Validators.required]],
     description: ['', [Validators.required, Validators.minLength(10)]],
     commentaires: ['']
   });
@@ -258,6 +270,7 @@ export class ActiviteFormComponent implements OnInit {
       categorieId: data.categorieId ? data.categorieId.toString() : '',
       dateActivite: data.dateActivite ? data.dateActivite.split('T')[0] : '',
       nombreParticipants: data.nombreParticipants,
+      statut: data.statut || 'REALISEE',
       description: data.description,
       commentaires: data.commentaires
     });
@@ -275,8 +288,14 @@ export class ActiviteFormComponent implements OnInit {
     // Map categorie name
     const selectedCat = this.categories.find(c => c.id === +formVal.categorieId);
     
+    // <input type="date"> renvoie "yyyy-MM-dd" → le backend attend un LocalDateTime
+    const dateActivite = formVal.dateActivite
+      ? (formVal.dateActivite.length === 10 ? `${formVal.dateActivite}T00:00:00` : formVal.dateActivite)
+      : null;
+
     const activiteData = {
       ...formVal,
+      dateActivite,
       categorieId: +formVal.categorieId,
       categorieNom: selectedCat ? selectedCat.nom : ''
     };
@@ -292,10 +311,9 @@ export class ActiviteFormComponent implements OnInit {
             confirmButtonColor: '#00875A'
           }).then(() => this.router.navigate(['/activites']));
         },
-        error: () => {
+        error: (err) => {
           this.submitting = false;
-          Swal.fire('Modifiée !', "Mise à jour enregistrée (Simulation).", 'success')
-            .then(() => this.router.navigate(['/activites']));
+          Swal.fire('Erreur', err?.error?.message || "Impossible de mettre à jour le rapport d'activité. Veuillez réessayer.", 'error');
         }
       });
     } else {
@@ -309,10 +327,9 @@ export class ActiviteFormComponent implements OnInit {
             confirmButtonColor: '#00875A'
           }).then(() => this.router.navigate(['/activites']));
         },
-        error: () => {
+        error: (err) => {
           this.submitting = false;
-          Swal.fire('Enregistrée !', "Rapport d'activité créé (Simulation).", 'success')
-            .then(() => this.router.navigate(['/activites']));
+          Swal.fire('Erreur', err?.error?.message || "Impossible d'enregistrer le rapport d'activité. Veuillez réessayer.", 'error');
         }
       });
     }

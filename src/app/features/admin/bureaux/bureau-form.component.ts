@@ -1,5 +1,5 @@
-import { Component, OnInit, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, AfterViewInit, OnDestroy, ElementRef, ViewChild, inject, PLATFORM_ID } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { BureauService } from '../../../core/services/bureau.service';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
@@ -211,6 +211,60 @@ interface RegionData {
                 </div>
               </div>
 
+              <!-- Section 3 : Géolocalisation (contrôle de pointage) -->
+              <h4 class="mb-2 text-csu-secondary">
+                <i class="bi bi-pin-map-fill me-2"></i> Géolocalisation du bureau
+              </h4>
+              <p class="small text-muted mb-3">
+                Coordonnées GPS utilisées pour vérifier que l'agent pointe bien depuis le bureau.
+                Laissez vide pour désactiver le contrôle.
+              </p>
+
+              <div class="row g-3 mb-4">
+                <div class="col-12 col-md-4">
+                  <div class="csu-form-group">
+                    <label class="csu-form-label" for="latitude">Latitude</label>
+                    <input id="latitude" type="number" step="any" class="csu-form-control"
+                           formControlName="latitude" placeholder="Ex: 14.6928" />
+                  </div>
+                </div>
+                <div class="col-12 col-md-4">
+                  <div class="csu-form-group">
+                    <label class="csu-form-label" for="longitude">Longitude</label>
+                    <input id="longitude" type="number" step="any" class="csu-form-control"
+                           formControlName="longitude" placeholder="Ex: -17.4467" />
+                  </div>
+                </div>
+                <div class="col-12 col-md-4">
+                  <div class="csu-form-group">
+                    <label class="csu-form-label" for="rayonToleranceMetres">Rayon de tolérance (m)</label>
+                    <input id="rayonToleranceMetres" type="number" min="10" class="csu-form-control"
+                           formControlName="rayonToleranceMetres" placeholder="150" />
+                  </div>
+                </div>
+                <div class="col-12">
+                  <button type="button" class="csu-btn csu-btn-light" (click)="utiliserMaPosition()" [disabled]="geoLoading">
+                    @if (geoLoading) {
+                      <span class="spinner-border spinner-border-sm me-2" role="status"></span> Localisation...
+                    } @else {
+                      <i class="bi bi-crosshair me-1"></i> Utiliser ma position actuelle
+                    }
+                  </button>
+                  @if (bureauForm.get('latitude')?.value && bureauForm.get('longitude')?.value) {
+                    <a class="ms-2 small text-decoration-none"
+                       [href]="'https://www.google.com/maps?q=' + bureauForm.get('latitude')?.value + ',' + bureauForm.get('longitude')?.value"
+                       target="_blank" rel="noopener">
+                      <i class="bi bi-geo-alt"></i> Voir sur la carte
+                    </a>
+                  }
+                </div>
+
+                <div class="col-12">
+                  <p class="small text-muted mb-1"><i class="bi bi-hand-index"></i> Cliquez sur la carte pour placer le bureau.</p>
+                  <div #mapContainer class="bureau-map"></div>
+                </div>
+              </div>
+
               <!-- Submit Buttons -->
               <div class="d-flex justify-content-end gap-3 border-top pt-4">
                 <button type="button" routerLink="/admin/bureaux" class="csu-btn csu-btn-light">
@@ -244,13 +298,23 @@ interface RegionData {
         </div>
       </div>
     </div>
-  `
+  `,
+  styles: [`
+    .bureau-map { height: 320px; width: 100%; border-radius: 12px; border: 1px solid var(--csu-border-light, rgba(0,0,0,0.1)); overflow: hidden; z-index: 0; }
+  `]
 })
-export class BureauFormComponent implements OnInit {
+export class BureauFormComponent implements OnInit, AfterViewInit, OnDestroy {
   private fb = inject(FormBuilder);
   private bureauService = inject(BureauService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
+  private platformId = inject(PLATFORM_ID);
+
+  @ViewChild('mapContainer') mapContainer?: ElementRef<HTMLElement>;
+  private L: any;
+  private map: any;
+  private marker: any;
+  private readonly defaultCenter: [number, number] = [14.6928, -17.4467]; // Dakar
 
   isEditMode = false;
   bureauId?: number;
@@ -305,8 +369,13 @@ export class BureauFormComponent implements OnInit {
     departement: [{ value: '', disabled: true }, [Validators.required]],
     commune: [{ value: '', disabled: true }, [Validators.required]],
     adresse: ['', [Validators.required]],
-    actif: [true]
+    actif: [true],
+    latitude: [null as number | null],
+    longitude: [null as number | null],
+    rayonToleranceMetres: [150 as number | null]
   });
+
+  geoLoading = false;
 
   ngOnInit(): void {
     const idParam = this.route.snapshot.paramMap.get('id');
@@ -315,6 +384,64 @@ export class BureauFormComponent implements OnInit {
       this.bureauId = +idParam;
       this.loadBureauData(this.bureauId);
     }
+  }
+
+  async ngAfterViewInit(): Promise<void> {
+    if (!isPlatformBrowser(this.platformId) || !this.mapContainer) return;
+
+    // Import dynamique (Leaflet utilise window/document → navigateur uniquement)
+    const leaflet = await import('leaflet');
+    this.L = (leaflet as any).default || leaflet;
+
+    // Corrige les chemins des icônes par défaut (problème connu avec les bundlers)
+    this.L.Icon.Default.mergeOptions({
+      iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+      iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+      shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png'
+    });
+
+    const lat = this.bureauForm.get('latitude')?.value;
+    const lng = this.bureauForm.get('longitude')?.value;
+    const center: [number, number] = (lat != null && lng != null) ? [lat, lng] : this.defaultCenter;
+
+    this.map = this.L.map(this.mapContainer.nativeElement).setView(center, (lat != null && lng != null) ? 16 : 12);
+    this.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '© OpenStreetMap'
+    }).addTo(this.map);
+
+    if (lat != null && lng != null) {
+      this.placerMarqueur(lat, lng, false);
+    }
+
+    // Clic sur la carte → place le bureau
+    this.map.on('click', (e: any) => {
+      const { lat, lng } = e.latlng;
+      this.bureauForm.patchValue({ latitude: +lat.toFixed(6), longitude: +lng.toFixed(6) });
+      this.placerMarqueur(lat, lng, false);
+    });
+
+    // Recalcule la taille après rendu (conteneur initialement masqué/animé)
+    setTimeout(() => this.map?.invalidateSize(), 200);
+  }
+
+  ngOnDestroy(): void {
+    if (this.map) { this.map.remove(); this.map = undefined; }
+  }
+
+  /** Place / déplace le marqueur, optionnellement recentre la carte. */
+  private placerMarqueur(lat: number, lng: number, recentrer = true): void {
+    if (!this.map || !this.L) return;
+    if (this.marker) {
+      this.marker.setLatLng([lat, lng]);
+    } else {
+      this.marker = this.L.marker([lat, lng], { draggable: true }).addTo(this.map);
+      this.marker.on('dragend', () => {
+        const pos = this.marker.getLatLng();
+        this.bureauForm.patchValue({ latitude: +pos.lat.toFixed(6), longitude: +pos.lng.toFixed(6) });
+      });
+    }
+    if (recentrer) this.map.setView([lat, lng], Math.max(this.map.getZoom(), 16));
   }
 
   isFieldInvalid(field: string): boolean {
@@ -353,8 +480,39 @@ export class BureauFormComponent implements OnInit {
       departement: b.departement,
       commune: b.commune,
       adresse: b.adresse,
-      actif: b.actif
+      actif: b.actif,
+      latitude: b.latitude ?? null,
+      longitude: b.longitude ?? null,
+      rayonToleranceMetres: b.rayonToleranceMetres ?? 150
     });
+
+    // Si la carte est déjà initialisée (données chargées après ngAfterViewInit)
+    if (b.latitude != null && b.longitude != null && this.map) {
+      this.placerMarqueur(b.latitude, b.longitude, true);
+    }
+  }
+
+  utiliserMaPosition(): void {
+    if (typeof navigator === 'undefined' || !navigator.geolocation) {
+      Swal.fire('Indisponible', "La géolocalisation n'est pas disponible sur cet appareil.", 'warning');
+      return;
+    }
+    this.geoLoading = true;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const lat = +pos.coords.latitude.toFixed(6);
+        const lng = +pos.coords.longitude.toFixed(6);
+        this.bureauForm.patchValue({ latitude: lat, longitude: lng });
+        this.placerMarqueur(lat, lng, true);
+        this.geoLoading = false;
+        Swal.fire({ icon: 'success', title: 'Position récupérée', timer: 1500, showConfirmButton: false });
+      },
+      (err) => {
+        this.geoLoading = false;
+        Swal.fire('Échec', err?.message || "Impossible d'obtenir la position.", 'error');
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
   }
 
   onRegionChange(): void {

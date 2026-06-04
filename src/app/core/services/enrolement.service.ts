@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { Enrolement, StatutEnrolement } from '../models/enrolement.model';
+import { Enrolement, StatutEnrolement, EnrolementRequest } from '../models/enrolement.model';
 
 @Injectable({
   providedIn: 'root'
@@ -30,7 +30,7 @@ export class EnrolementService {
     return this.http.get<Enrolement>(`${this.apiUrl}/${id}`);
   }
 
-  createEnrolement(enrolement: Enrolement): Observable<Enrolement> {
+  createEnrolement(enrolement: EnrolementRequest): Observable<Enrolement> {
     return this.http.post<Enrolement>(this.apiUrl, enrolement);
   }
 

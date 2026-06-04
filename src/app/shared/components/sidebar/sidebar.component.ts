@@ -53,6 +53,16 @@ import { AuthService } from '../../../core/services/auth.service';
             <i class="bi bi-clipboard-check"></i>
             <span *ngIf="!collapsed">Constats</span>
           </a>
+
+          <a class="csu-sidebar-link" routerLink="/pointage" routerLinkActive="active">
+            <i class="bi bi-clock-history"></i>
+            <span *ngIf="!collapsed">Pointage</span>
+          </a>
+
+          <a class="csu-sidebar-link" routerLink="/permissions" routerLinkActive="active">
+            <i class="bi bi-calendar2-week"></i>
+            <span *ngIf="!collapsed">Permissions</span>
+          </a>
         </div>
 
         <!-- Section: Rapports -->

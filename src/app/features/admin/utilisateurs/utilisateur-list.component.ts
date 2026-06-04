@@ -103,7 +103,7 @@ import Swal from 'sweetalert2';
                       {{ u.role }}
                     </span>
                   </td>
-                  <td>{{ u.bureauCsu?.nom || 'Non affecté' }}</td>
+                  <td>{{ u.bureauCsuNom || u.bureauCsu?.nom || 'Non affecté' }}</td>
                   <td>
                     <div class="form-check form-switch m-0">
                       <input 

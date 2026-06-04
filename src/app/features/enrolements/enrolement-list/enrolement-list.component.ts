@@ -4,13 +4,13 @@ import { EnrolementService } from '../../../core/services/enrolement.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { Enrolement, StatutEnrolement } from '../../../core/models/enrolement.model';
 import { RouterLink } from '@angular/router';
-import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { FilterBarComponent, FilterGroup, FilterValues } from '../../../shared/components/filter-bar/filter-bar.component';
 import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-enrolement-list',
   standalone: true,
-  imports: [CommonModule, RouterLink, ReactiveFormsModule],
+  imports: [CommonModule, RouterLink, FilterBarComponent],
   template: `
     <div class="container-fluid animate-fade-in">
       <!-- Header -->
@@ -29,38 +29,12 @@ import Swal from 'sweetalert2';
         </div>
       </div>
 
-      <!-- Filters -->
-      <div class="csu-card mb-4">
-        <form [formGroup]="filterForm" (ngSubmit)="onSearch()" class="row g-3">
-          <div class="col-12 col-md-5">
-            <div class="csu-search-input">
-              <i class="bi bi-search"></i>
-              <input
-                type="text"
-                placeholder="Rechercher par N° Bénéficiaire ou Patient..."
-                formControlName="search"
-              />
-            </div>
-          </div>
-          <div class="col-12 col-md-4">
-            <select class="csu-form-control csu-form-select" formControlName="statut">
-              <option value="">Tous les statuts</option>
-              <option value="EN_COURS">En cours d'examen</option>
-              <option value="VALIDE">Validé / Affilié</option>
-              <option value="REJETE">Rejeté / Refusé</option>
-              <option value="SUSPENDU">Suspendu</option>
-            </select>
-          </div>
-          <div class="col-12 col-md-3 d-flex gap-2">
-            <button type="submit" class="csu-btn csu-btn-primary w-100">
-              Filtrer
-            </button>
-            <button type="button" class="csu-btn csu-btn-light" (click)="onReset()">
-              <i class="bi bi-arrow-counterclockwise"></i>
-            </button>
-          </div>
-        </form>
-      </div>
+      <!-- Filtres épurés -->
+      <app-filter-bar
+        searchPlaceholder="Rechercher par N° Bénéficiaire ou Patient..."
+        [filterGroups]="filterGroups"
+        (filterChange)="onFilterChange($event)"
+      ></app-filter-bar>
 
       <!-- Table -->
       <div class="csu-table-wrapper">
@@ -173,7 +147,6 @@ import Swal from 'sweetalert2';
 export class EnrolementListComponent implements OnInit {
   private enrolementService = inject(EnrolementService);
   private authService = inject(AuthService);
-  private fb = inject(FormBuilder);
 
   enrolements: Enrolement[] = [];
   loading = false;
@@ -185,24 +158,39 @@ export class EnrolementListComponent implements OnInit {
   totalPages = 0;
   Math = Math;
 
-  filterForm = this.fb.group({
-    search: [''],
-    statut: ['']
-  });
+  filters: FilterValues & { search: string } = { search: '', statut: '' };
+
+  filterGroups: FilterGroup[] = [
+    {
+      key: 'statut',
+      label: 'Statut',
+      options: [
+        { value: 'EN_COURS', label: 'En cours' },
+        { value: 'VALIDE', label: 'Validé' },
+        { value: 'REJETE', label: 'Rejeté' },
+        { value: 'SUSPENDU', label: 'Suspendu' }
+      ]
+    }
+  ];
 
   ngOnInit(): void {
     this.loadEnrolements();
   }
 
+  onFilterChange(values: FilterValues & { search: string }): void {
+    this.filters = values;
+    this.page = 0;
+    this.loadEnrolements();
+  }
+
   loadEnrolements(): void {
     this.loading = true;
-    const { search, statut } = this.filterForm.value;
 
     this.enrolementService.getEnrolements(
-      this.page, 
-      this.size, 
-      statut as StatutEnrolement || undefined, 
-      search || undefined
+      this.page,
+      this.size,
+      (this.filters['statut'] as StatutEnrolement) || undefined,
+      this.filters.search || undefined
     ).subscribe({
       next: (res) => {
         this.enrolements = res.content;
@@ -223,20 +211,6 @@ export class EnrolementListComponent implements OnInit {
         });
       }
     });
-  }
-
-  onSearch(): void {
-    this.page = 0;
-    this.loadEnrolements();
-  }
-
-  onReset(): void {
-    this.filterForm.reset({
-      search: '',
-      statut: ''
-    });
-    this.page = 0;
-    this.loadEnrolements();
   }
 
   onPageChange(newPage: number): void {

@@ -4,13 +4,13 @@ import { ConstatService } from '../../../core/services/constat.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { Constat, StatutConstat, PrioriteConstat } from '../../../core/models/constat.model';
 import { RouterLink } from '@angular/router';
-import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { FilterBarComponent, FilterGroup, FilterValues } from '../../../shared/components/filter-bar/filter-bar.component';
 import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-constat-list',
   standalone: true,
-  imports: [CommonModule, RouterLink, ReactiveFormsModule],
+  imports: [CommonModule, RouterLink, FilterBarComponent],
   template: `
     <div class="container-fluid animate-fade-in">
       <!-- Header -->
@@ -29,47 +29,12 @@ import Swal from 'sweetalert2';
         </div>
       </div>
 
-      <!-- Filters -->
-      <div class="csu-card mb-4">
-        <form [formGroup]="filterForm" (ngSubmit)="onSearch()" class="row g-3">
-          <div class="col-12 col-md-4">
-            <div class="csu-search-input">
-              <i class="bi bi-search"></i>
-              <input
-                type="text"
-                placeholder="Rechercher par référence ou description..."
-                formControlName="search"
-              />
-            </div>
-          </div>
-          <div class="col-6 col-md-3">
-            <select class="csu-form-control csu-form-select" formControlName="statut">
-              <option value="">Tous les statuts</option>
-              <option value="OUVERT">Ouvert</option>
-              <option value="EN_COURS">En cours de traitement</option>
-              <option value="RESOLU">Résolu</option>
-              <option value="ARCHIVE">Archivé</option>
-            </select>
-          </div>
-          <div class="col-6 col-md-3">
-            <select class="csu-form-control csu-form-select" formControlName="priorite">
-              <option value="">Toutes les priorités</option>
-              <option value="BASSE">Basse</option>
-              <option value="MOYENNE">Moyenne</option>
-              <option value="HAUTE">Haute / Critique</option>
-              <option value="URGENTE">Urgente / Bloquant</option>
-            </select>
-          </div>
-          <div class="col-12 col-md-2 d-flex gap-2">
-            <button type="submit" class="csu-btn csu-btn-primary w-100">
-              Filtrer
-            </button>
-            <button type="button" class="csu-btn csu-btn-light" (click)="onReset()">
-              <i class="bi bi-arrow-counterclockwise"></i>
-            </button>
-          </div>
-        </form>
-      </div>
+      <!-- Filtres épurés -->
+      <app-filter-bar
+        searchPlaceholder="Rechercher par référence ou description..."
+        [filterGroups]="filterGroups"
+        (filterChange)="onFilterChange($event)"
+      ></app-filter-bar>
 
       <!-- Table -->
       <div class="csu-table-wrapper">
@@ -182,7 +147,6 @@ import Swal from 'sweetalert2';
 export class ConstatListComponent implements OnInit {
   private constatService = inject(ConstatService);
   private authService = inject(AuthService);
-  private fb = inject(FormBuilder);
 
   constats: Constat[] = [];
   loading = false;
@@ -194,26 +158,50 @@ export class ConstatListComponent implements OnInit {
   totalPages = 0;
   Math = Math;
 
-  filterForm = this.fb.group({
-    search: [''],
-    statut: [''],
-    priorite: ['']
-  });
+  filters: FilterValues & { search: string } = { search: '', statut: '', priorite: '' };
+
+  filterGroups: FilterGroup[] = [
+    {
+      key: 'statut',
+      label: 'Statut',
+      options: [
+        { value: 'OUVERT', label: 'Ouvert' },
+        { value: 'EN_COURS', label: 'En cours' },
+        { value: 'RESOLU', label: 'Résolu' },
+        { value: 'ARCHIVE', label: 'Archivé' }
+      ]
+    },
+    {
+      key: 'priorite',
+      label: 'Priorité',
+      options: [
+        { value: 'BASSE', label: 'Basse' },
+        { value: 'MOYENNE', label: 'Moyenne' },
+        { value: 'HAUTE', label: 'Haute' },
+        { value: 'URGENTE', label: 'Urgente' }
+      ]
+    }
+  ];
 
   ngOnInit(): void {
     this.loadConstats();
   }
 
+  onFilterChange(values: FilterValues & { search: string }): void {
+    this.filters = values;
+    this.page = 0;
+    this.loadConstats();
+  }
+
   loadConstats(): void {
     this.loading = true;
-    const { search, statut, priorite } = this.filterForm.value;
 
     this.constatService.getConstats(
       this.page,
       this.size,
-      statut as StatutConstat || undefined,
-      priorite as PrioriteConstat || undefined,
-      search || undefined
+      (this.filters['statut'] as StatutConstat) || undefined,
+      (this.filters['priorite'] as PrioriteConstat) || undefined,
+      this.filters.search || undefined
     ).subscribe({
       next: (res) => {
         this.constats = res.content;
@@ -234,21 +222,6 @@ export class ConstatListComponent implements OnInit {
         });
       }
     });
-  }
-
-  onSearch(): void {
-    this.page = 0;
-    this.loadConstats();
-  }
-
-  onReset(): void {
-    this.filterForm.reset({
-      search: '',
-      statut: '',
-      priorite: ''
-    });
-    this.page = 0;
-    this.loadConstats();
   }
 
   onPageChange(newPage: number): void {

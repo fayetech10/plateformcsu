@@ -8,4 +8,8 @@ export interface BureauCsu {
   adresse: string;
   telephone: string;
   actif: boolean;
+  type?: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  rayonToleranceMetres?: number | null;
 }
