@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
+import { NotificationService } from '../../../core/services/notification.service';
 import Swal from 'sweetalert2';
 
 @Component({
@@ -154,6 +155,7 @@ export class LoginComponent implements OnInit {
   private authService = inject(AuthService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
+  private notify = inject(NotificationService);
 
   loginForm = this.fb.group({
     username: ['', [Validators.required]],
@@ -211,28 +213,13 @@ export class LoginComponent implements OnInit {
           // Changement obligatoire du mot de passe par défaut
           if (user.doitChangerMotDePasse) {
             this.router.navigate(['/changer-mot-de-passe']);
-            Swal.fire({
-              icon: 'info',
-              title: 'Action requise',
-              text: 'Pour votre sécurité, veuillez changer votre mot de passe par défaut.',
-              confirmButtonColor: '#00875A'
-            });
+            this.notify.info('Action requise', 'Pour votre sécurité, veuillez changer votre mot de passe par défaut.');
             return;
           }
 
           const returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/dashboard';
           this.router.navigateByUrl(returnUrl);
-          Swal.fire({
-            toast: true,
-            position: 'top-end',
-            icon: 'success',
-            title: `Bienvenue, ${user.prenom} ${user.nom}`,
-            showConfirmButton: false,
-            timer: 3000,
-            timerProgressBar: true,
-            background: '#1e1e2f',
-            color: '#fff'
-          });
+          this.notify.toast(`Bienvenue, ${user.prenom} ${user.nom}`, 'success', 3000);
         },
         error: () => {
           this.loading = false;

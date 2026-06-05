@@ -5,6 +5,7 @@ import { Chart, registerables } from 'chart.js';
 import { AdminDashboardService } from '../../core/services/admin-dashboard.service';
 import { AdminDashboardStats, AdminAgentStats, AdminGeoStats, PonctualiteStats, BureauCarte } from '../../core/models/admin-dashboard.model';
 import { PatientChartsComponent } from '../patients/patient-charts.component';
+import { PageHeaderComponent, LoadingComponent, EmptyStateComponent } from '../../shared/ui';
 
 type Onglet = 'agents' | 'patients' | 'geo' | 'bureaux' | 'carte' | 'systeme';
 
@@ -15,22 +16,19 @@ type Onglet = 'agents' | 'patients' | 'geo' | 'bureaux' | 'carte' | 'systeme';
 @Component({
   selector: 'app-statistiques',
   standalone: true,
-  imports: [CommonModule, RouterLink, PatientChartsComponent],
+  imports: [CommonModule, RouterLink, PatientChartsComponent, PageHeaderComponent, LoadingComponent, EmptyStateComponent],
   template: `
     <div class="container-fluid animate-fade-in">
-      <!-- Header -->
-      <div class="csu-page-header">
-        <div>
-          <h1 class="csu-page-title">
-            <i class="bi bi-bar-chart-line-fill text-csu-primary"></i>
-            Gestion des statistiques
-          </h1>
-          <p class="csu-page-subtitle">Analyses consolidées : agents, patients, bureaux et indicateurs système</p>
-        </div>
+      <!-- Header (composant partagé) -->
+      <csu-page-header
+        icon="bi-bar-chart-line-fill"
+        iconColor="var(--csu-primary)"
+        title="Gestion des statistiques"
+        subtitle="Analyses consolidées : agents, patients, bureaux et indicateurs système">
         <button (click)="reload()" class="csu-btn csu-btn-light" [disabled]="loading">
           <i class="bi bi-arrow-clockwise" [class.spin]="loading"></i> Actualiser
         </button>
-      </div>
+      </csu-page-header>
 
       <!-- Onglets -->
       <div class="stat-tabs mb-4">
@@ -55,13 +53,11 @@ type Onglet = 'agents' | 'patients' | 'geo' | 'bureaux' | 'carte' | 'systeme';
       </div>
 
       @if (loading) {
-        <div class="csu-loading"><div class="csu-spinner"></div></div>
+        <csu-loading message="Chargement des statistiques..." />
       } @else if (error) {
-        <div class="csu-empty-state">
-          <i class="bi bi-exclamation-triangle text-warning"></i>
-          <h3>Impossible de charger les statistiques</h3>
+        <csu-empty-state icon="bi-exclamation-triangle" title="Impossible de charger les statistiques">
           <button class="csu-btn csu-btn-primary mt-3" (click)="reload()">Réessayer</button>
-        </div>
+        </csu-empty-state>
       } @else {
 
         <!-- ── Onglet AGENTS ── -->
@@ -82,7 +78,7 @@ type Onglet = 'agents' | 'patients' | 'geo' | 'bureaux' | 'carte' | 'systeme';
                 <div class="csu-card-header"><h3 class="csu-card-title"><i class="bi bi-graph-up-arrow text-csu-primary"></i> Contributions (top 8)</h3></div>
                 @if (agentStats.agents.length > 0) {
                   <div style="position: relative; height: 340px;"><canvas #agentsChartCanvas></canvas></div>
-                } @else { <div class="csu-empty-state"><i class="bi bi-people"></i><h3>Aucun agent</h3></div> }
+                } @else { <csu-empty-state icon="bi-people" title="Aucun agent" compact /> }
               </div>
             </div>
             <div class="col-12 col-lg-6">
@@ -196,7 +192,7 @@ type Onglet = 'agents' | 'patients' | 'geo' | 'bureaux' | 'carte' | 'systeme';
                 <div class="csu-card-header"><h3 class="csu-card-title"><i class="bi bi-bar-chart text-csu-primary"></i> Patients par bureau</h3></div>
                 @if (stats.bureauxStats.length > 0) {
                   <div style="position: relative; height: 340px;"><canvas #bureauxChartCanvas></canvas></div>
-                } @else { <div class="csu-empty-state"><i class="bi bi-building"></i><h3>Aucun bureau</h3></div> }
+                } @else { <csu-empty-state icon="bi-building" title="Aucun bureau" compact /> }
               </div>
             </div>
             <div class="col-12 col-lg-6">
@@ -235,7 +231,8 @@ type Onglet = 'agents' | 'patients' | 'geo' | 'bureaux' | 'carte' | 'systeme';
               <span class="small text-muted">{{ bureauxCarte.length }} bureau(x) géolocalisé(s) · cliquez un repère</span>
             </div>
             @if (bureauxCarte.length === 0) {
-              <div class="csu-empty-state"><i class="bi bi-pin-map"></i><h3>Aucun bureau géolocalisé</h3><p>Renseignez les coordonnées des bureaux pour les afficher sur la carte.</p></div>
+              <csu-empty-state icon="bi-pin-map" title="Aucun bureau géolocalisé"
+                message="Renseignez les coordonnées des bureaux pour les afficher sur la carte." />
             }
             <div #mapContainer class="bureaux-map" [class.d-none]="bureauxCarte.length === 0"></div>
           </div>
