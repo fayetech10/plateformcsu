@@ -10,12 +10,11 @@ import { PointageService } from '../../../core/services/pointage.service';
 import { PointagesJour, PointageLigne } from '../../../core/models/pointage.model';
 import { PermissionService } from '../../../core/services/permission.service';
 import { DemandePermission } from '../../../core/models/permission.model';
-import { PatientChartsComponent } from '../../patients/patient-charts.component';
 
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule, PatientChartsComponent],
+  imports: [CommonModule, RouterLink, FormsModule],
   template: `
     <div class="container-fluid animate-fade-in">
       <!-- Header -->
@@ -196,8 +195,6 @@ import { PatientChartsComponent } from '../../patients/patient-charts.component'
           </div>
         </div>
 
-        <!-- Statistiques visuelles des patients -->
-        <app-patient-charts />
 
         <!-- Présence du jour (pointage) -->
         <div class="csu-card mb-4">

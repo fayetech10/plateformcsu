@@ -99,6 +99,81 @@ import { RouterLink } from '@angular/router';
           </div>
         </a>
 
+        <!-- Dialyse péritonéale -->
+        <a class="type-card" [routerLink]="['/patients/nouveau/formulaire']" [queryParams]="{type: 'dialyse-peritoneale'}">
+          <div class="type-card-icon dialyse">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2s6 7 6 11a6 6 0 0 1-12 0c0-4 6-11 6-11z"/>
+            </svg>
+          </div>
+          <div class="type-card-content">
+            <h3 class="type-card-title">Dialyse péritonéale</h3>
+            <p class="type-card-desc">Suivi de la dialyse péritonéale</p>
+          </div>
+          <div class="type-card-arrow">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </div>
+        </a>
+
+        <!-- Hémodialyse -->
+        <a class="type-card" [routerLink]="['/patients/nouveau/formulaire']" [queryParams]="{type: 'hemodialyse'}">
+          <div class="type-card-icon hemodialyse">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 12h4l2 5 4-12 2 7h6"/>
+            </svg>
+          </div>
+          <div class="type-card-content">
+            <h3 class="type-card-title">Hémodialyse</h3>
+            <p class="type-card-desc">Suivi des séances d'hémodialyse</p>
+          </div>
+          <div class="type-card-arrow">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </div>
+        </a>
+
+        <!-- Bourse de Sécurité Familiale -->
+        <a class="type-card" [routerLink]="['/patients/nouveau/formulaire']" [queryParams]="{type: 'bsf'}">
+          <div class="type-card-icon bsf">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 7h18v13H3z"/>
+              <path d="M8 7V5a4 4 0 0 1 8 0v2"/>
+            </svg>
+          </div>
+          <div class="type-card-content">
+            <h3 class="type-card-title">Bourse de Sécurité Familiale</h3>
+            <p class="type-card-desc">Bénéficiaires BSF</p>
+          </div>
+          <div class="type-card-arrow">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </div>
+        </a>
+
+        <!-- Carte Égalité des Chances -->
+        <a class="type-card" [routerLink]="['/patients/nouveau/formulaire']" [queryParams]="{type: 'cec'}">
+          <div class="type-card-icon cec">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="4" width="20" height="16" rx="2"/>
+              <circle cx="8" cy="10" r="2"/>
+              <path d="M14 9h5M14 13h5M5 16h8"/>
+            </svg>
+          </div>
+          <div class="type-card-content">
+            <h3 class="type-card-title">Carte Égalité des Chances</h3>
+            <p class="type-card-desc">Bénéficiaires CEC</p>
+          </div>
+          <div class="type-card-arrow">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </div>
+        </a>
+
         <!-- Plan Sésame -->
         <a class="type-card" [routerLink]="['/patients/nouveau/formulaire']" [queryParams]="{type: 'plan-sesame'}">
           <div class="type-card-icon sesame">
@@ -112,6 +187,25 @@ import { RouterLink } from '@angular/router';
           <div class="type-card-content">
             <h3 class="type-card-title">Plan Sésame</h3>
             <p class="type-card-desc">Personnes âgées — Plan Sésame</p>
+          </div>
+          <div class="type-card-arrow">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </div>
+        </a>
+
+        <!-- Plan Ndongo Dara / Élève -->
+        <a class="type-card" [routerLink]="['/patients/nouveau/formulaire']" [queryParams]="{type: 'ndongo-dara'}">
+          <div class="type-card-icon ndongo">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 10L12 5 2 10l10 5 10-5z"/>
+              <path d="M6 12v5c0 1 2.7 2.5 6 2.5s6-1.5 6-2.5v-5"/>
+            </svg>
+          </div>
+          <div class="type-card-content">
+            <h3 class="type-card-title">Plan Ndongo Dara / Élève</h3>
+            <p class="type-card-desc">Élèves et bénéficiaires Ndongo Dara</p>
           </div>
           <div class="type-card-arrow">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -199,6 +293,26 @@ import { RouterLink } from '@angular/router';
     .type-card-icon.sesame {
       background: rgba(123, 31, 162, 0.08);
       color: #7B1FA2;
+    }
+    .type-card-icon.dialyse {
+      background: rgba(0, 151, 167, 0.08);
+      color: #00838F;
+    }
+    .type-card-icon.hemodialyse {
+      background: rgba(216, 67, 21, 0.08);
+      color: #D84315;
+    }
+    .type-card-icon.bsf {
+      background: rgba(46, 125, 50, 0.08);
+      color: #2E7D32;
+    }
+    .type-card-icon.cec {
+      background: rgba(40, 53, 147, 0.08);
+      color: #283593;
+    }
+    .type-card-icon.ndongo {
+      background: rgba(245, 124, 0, 0.08);
+      color: #EF6C00;
     }
 
     .type-card-content {

@@ -166,10 +166,15 @@ export class PatientListComponent implements OnInit {
       key: 'categorie',
       label: 'Catégorie',
       options: [
-        { value: 'plan-sesame', label: 'Plan Sésame' },
-        { value: '0-5ans', label: '0 à 5 ans' },
         { value: 'classique', label: 'Classique' },
-        { value: 'cesarienne', label: 'Césarienne' }
+        { value: '0-5ans', label: 'Enfants de moins de 5 ans' },
+        { value: 'cesarienne', label: 'Césarienne' },
+        { value: 'dialyse-peritoneale', label: 'Dialyse péritonéale' },
+        { value: 'hemodialyse', label: 'Hémodialyse' },
+        { value: 'bsf', label: 'Bourse de Sécurité Familiale' },
+        { value: 'cec', label: 'Carte Égalité des Chances' },
+        { value: 'plan-sesame', label: 'Plan Sésame' },
+        { value: 'ndongo-dara', label: 'Plan Ndongo Dara / Élève' }
       ]
     },
     {
@@ -320,17 +325,24 @@ export class PatientListComponent implements OnInit {
     return age;
   }
 
+  private static LABELS: Record<string, string> = {
+    'classique': 'Classique',
+    '0-5ans': 'Enfants de moins de 5 ans',
+    'cesarienne': 'Césarienne',
+    'dialyse-peritoneale': 'Dialyse péritonéale',
+    'hemodialyse': 'Hémodialyse',
+    'bsf': 'Bourse de Sécurité Familiale',
+    'cec': 'Carte Égalité des Chances',
+    'plan-sesame': 'Plan Sésame',
+    'ndongo-dara': 'Plan Ndongo Dara / Élève'
+  };
+
   getCategoryLabel(patient: Patient): string {
-    if (patient.categorie) {
-      switch (patient.categorie) {
-        case '0-5ans': return '0 à 5 ans';
-        case 'plan-sesame': return 'Plan Sésame';
-        case 'classique': return 'Classique';
-        case 'cesarienne': return 'Césarienne';
-      }
+    if (patient.categorie && PatientListComponent.LABELS[patient.categorie]) {
+      return PatientListComponent.LABELS[patient.categorie];
     }
     const age = this.calculateAge(patient.dateNaissance);
-    if (age <= 5) return '0 à 5 ans';
+    if (age <= 5) return 'Enfants de moins de 5 ans';
     if (age >= 60) return 'Plan Sésame';
     if (patient.photoIdentiteRecto || patient.photoIdentiteVerso) return 'Classique';
     if (patient.sexe === 'F') return 'Césarienne';
@@ -339,12 +351,16 @@ export class PatientListComponent implements OnInit {
 
 
   getCategoryBadgeClass(patient: Patient): string {
-    const cat = this.getCategoryLabel(patient);
-    switch (cat) {
-      case '0 à 5 ans': return 'csu-badge-primary';
-      case 'Plan Sésame': return 'csu-badge-warning';
-      case 'Classique': return 'csu-badge-success';
-      case 'Césarienne': return 'csu-badge-danger';
+    switch (patient.categorie) {
+      case '0-5ans': return 'csu-badge-primary';
+      case 'plan-sesame': return 'csu-badge-warning';
+      case 'classique': return 'csu-badge-success';
+      case 'cesarienne': return 'csu-badge-danger';
+      case 'dialyse-peritoneale': return 'csu-badge-info';
+      case 'hemodialyse': return 'csu-badge-info';
+      case 'bsf': return 'csu-badge-success';
+      case 'cec': return 'csu-badge-info';
+      case 'ndongo-dara': return 'csu-badge-warning';
       default: return 'csu-badge-secondary';
     }
   }

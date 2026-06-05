@@ -4,11 +4,12 @@ import { RouterOutlet } from '@angular/router';
 import { SidebarComponent } from '../../shared/components/sidebar/sidebar.component';
 import { NavbarComponent } from '../../shared/components/navbar/navbar.component';
 import { BottomNavComponent } from '../../shared/components/bottom-nav/bottom-nav.component';
+import { PointagePunchModalComponent } from '../../features/pointage/pointage-punch-modal.component';
 
 @Component({
   selector: 'app-main-layout',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, SidebarComponent, NavbarComponent, BottomNavComponent],
+  imports: [CommonModule, RouterOutlet, SidebarComponent, NavbarComponent, BottomNavComponent, PointagePunchModalComponent],
   template: `
     <div class="d-flex">
       <!-- Sidebar -->
@@ -31,6 +32,9 @@ import { BottomNavComponent } from '../../shared/components/bottom-nav/bottom-na
 
     <!-- Mobile Bottom Navigation -->
     <app-bottom-nav></app-bottom-nav>
+
+    <!-- Modal plein écran de pointage (agents non pointés) -->
+    <app-pointage-punch-modal></app-pointage-punch-modal>
   `
 })
 export class MainLayoutComponent {

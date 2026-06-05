@@ -114,9 +114,7 @@ export class PointageReminderComponent implements OnInit {
     this.pointageService.pointerArrivee(coords || undefined).subscribe({
       next: (res) => {
         this.busy = false;
-        if (res.alerte) {
-          Swal.fire({ icon: 'warning', title: 'Arrivée enregistrée (hors zone)', text: res.alerte });
-        } else if (res.positionVerifiee === false) {
+        if (res.positionVerifiee === false) {
           Swal.fire({ icon: 'info', title: 'Arrivée enregistrée', text: `Heure : ${res.heureArrivee} — position non vérifiée.`, timer: 2500, showConfirmButton: false });
         } else {
           Swal.fire({ icon: 'success', title: 'Arrivée enregistrée', text: `Heure : ${res.heureArrivee}`, timer: 2000, showConfirmButton: false });
@@ -125,7 +123,8 @@ export class PointageReminderComponent implements OnInit {
       },
       error: (err) => {
         this.busy = false;
-        Swal.fire({ icon: 'warning', title: 'Impossible', text: err?.error?.message || 'Erreur lors du pointage.' });
+        const horsZone = err?.error?.horsZone === true;
+        Swal.fire({ icon: 'error', title: horsZone ? 'Pointage refusé' : 'Impossible', text: err?.error?.message || 'Erreur lors du pointage.' });
         this.load();
       }
     });
@@ -137,16 +136,13 @@ export class PointageReminderComponent implements OnInit {
     this.pointageService.pointerDepart(coords || undefined).subscribe({
       next: (res) => {
         this.busy = false;
-        if (res.alerte) {
-          Swal.fire({ icon: 'warning', title: 'Départ enregistré (hors zone)', text: res.alerte });
-        } else {
-          Swal.fire({ icon: 'success', title: 'Départ enregistré', text: `Heure : ${res.heureDepart}`, timer: 2000, showConfirmButton: false });
-        }
+        Swal.fire({ icon: 'success', title: 'Départ enregistré', text: `Heure : ${res.heureDepart}`, timer: 2000, showConfirmButton: false });
         this.load();
       },
       error: (err) => {
         this.busy = false;
-        Swal.fire({ icon: 'warning', title: 'Impossible', text: err?.error?.message || 'Erreur lors du pointage.' });
+        const horsZone = err?.error?.horsZone === true;
+        Swal.fire({ icon: 'error', title: horsZone ? 'Pointage refusé' : 'Impossible', text: err?.error?.message || 'Erreur lors du pointage.' });
         this.load();
       }
     });

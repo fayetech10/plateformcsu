@@ -71,12 +71,12 @@ import Swal from 'sweetalert2';
                     <span class="fw-bold text-csu-secondary">{{ e.numeroBeneficiaire }}</span>
                   </td>
                   <td>
-                    @if (e.patient) {
-                      <a [routerLink]="['/patients', e.patientId]" class="fw-semibold text-dark hover-primary">
-                        {{ e.patient.prenom }} {{ e.patient.nom }}
-                      </a>
+                    @if (e.prenom || e.nom) {
+                      <span class="fw-semibold text-dark">{{ e.prenom }} {{ e.nom }}</span>
+                    } @else if (e.patient) {
+                      <span class="fw-semibold text-dark">{{ e.patient.prenom }} {{ e.patient.nom }}</span>
                     } @else {
-                      <span>Dossier #{{ e.patientId }}</span>
+                      <span class="text-muted">—</span>
                     }
                   </td>
                   <td>{{ e.dateEnrolement | date:'dd/MM/yyyy' }}</td>
@@ -292,7 +292,7 @@ export class EnrolementListComponent implements OnInit {
       html: `
         <div class="text-start">
           <p><strong>Statut :</strong> ${this.getStatutLabel(e.statut)}</p>
-          <p><strong>Bénéficiaire :</strong> ${e.patient?.prenom} ${e.patient?.nom}</p>
+          <p><strong>Bénéficiaire :</strong> ${(e.prenom || e.patient?.prenom) ?? ''} ${(e.nom || e.patient?.nom) ?? ''}</p>
           <p><strong>Observations :</strong></p>
           <blockquote class="bg-light p-3 border-start border-primary border-4 rounded">
             ${e.observations || "Aucune observation enregistrée."}

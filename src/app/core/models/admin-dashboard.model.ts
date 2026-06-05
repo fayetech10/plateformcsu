@@ -40,6 +40,74 @@ export interface AdminDashboardStats {
   }>;
 }
 
+export interface AgentStatLigne {
+  id: number;
+  nom: string;
+  prenom: string;
+  actif: boolean;
+  bureauNom: string;
+  patients: number;
+  enrolements: number;
+  activites: number;
+  constats: number;
+  total: number;
+}
+
+export interface AdminAgentStats {
+  agents: AgentStatLigne[];
+  nbAgents: number;
+  moyennePatientsParAgent: number;
+  moyenneEnrolementsParAgent: number;
+  moyenneActivitesParAgent: number;
+  totalPatients: number;
+  totalEnrolements: number;
+  totalActivites: number;
+  totalConstats: number;
+  agentTop: string | null;
+  agentsSansActivite: number;
+}
+
+export interface AdminGeoStats {
+  total: number;
+  parRegion: { [k: string]: number };
+  parDepartement: { [k: string]: number };
+  parCommune: { [k: string]: number };
+  parAnnee: { [k: string]: number };
+}
+
+export interface PonctualiteAgent {
+  agentId: number;
+  nom: string;
+  bureauNom: string;
+  aLHeure: number;
+  enRetard: number;
+  total: number;
+  tauxPonctualite: number;
+}
+
+export interface PonctualiteStats {
+  heureLimite: string;
+  totalArrivees: number;
+  aLHeure: number;
+  enRetard: number;
+  tauxPonctualite: number;
+  agents: PonctualiteAgent[];
+}
+
+export interface BureauCarte {
+  id: number;
+  nom: string;
+  region: string;
+  commune: string;
+  type: string;
+  actif: boolean;
+  latitude: number;
+  longitude: number;
+  nbAgents: number;
+  agents: string[];
+  patients: number;
+}
+
 export interface BureauDetail {
   bureau: {
     id: number;

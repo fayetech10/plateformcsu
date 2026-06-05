@@ -21,6 +21,7 @@ import { CategoriesComponent } from './features/admin/categories/categories.comp
 import { DashboardHomeComponent } from './features/dashboard/dashboard-home.component';
 import { BureauDetailComponent } from './features/admin/bureaux/bureau-detail.component';
 import { PointageComponent } from './features/pointage/pointage.component';
+import { StatistiquesComponent } from './features/statistiques/statistiques.component';
 import { PermissionComponent } from './features/permissions/permission.component';
 import { ChangePasswordComponent } from './features/auth/change-password/change-password.component';
 import { authGuard } from './core/guards/auth.guard';
@@ -68,6 +69,9 @@ export const routes: Routes = [
       
       // Rapports
       { path: 'rapports', component: RapportsComponent },
+
+      // Statistiques (ADMIN)
+      { path: 'statistiques', component: StatistiquesComponent, canActivate: [roleGuard], data: { roles: ['ADMIN'] } },
       
       // Admin (Only ADMIN role)
       // L'ancienne URL /admin redirige vers le tableau de bord unifié

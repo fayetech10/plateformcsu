@@ -137,39 +137,25 @@ import Swal from 'sweetalert2';
               </div>
             </div>
 
-            <!-- Card: Informations Médicales (0 à 5 ans) -->
-            <div class="csu-card" *ngIf="getCategoryLabel(patient) === '0 à 5 ans' || patient.numeroRegistre || patient.diagnosticMotif">
+            <!-- Card: Informations spécifiques à la catégorie -->
+            <div class="csu-card" *ngIf="specInfo.length">
               <div class="csu-card-header">
                 <h3 class="csu-card-title text-csu-primary">
-                  <i class="bi bi-file-medical-fill text-primary"></i>
-                  Informations Médicales (0 à 5 ans)
+                  <i class="bi bi-clipboard2-pulse text-primary"></i>
+                  Informations spécifiques — {{ getCategoryLabel(patient) }}
                 </h3>
               </div>
               <div class="row g-3">
-                <div class="col-6 border-bottom pb-2">
-                  <span class="d-block small text-muted">Numéro de Registre</span>
-                  <span class="fw-semibold">{{ patient.numeroRegistre || '-' }}</span>
-                </div>
-                <div class="col-6 border-bottom pb-2">
-                  <span class="d-block small text-muted">N° Matricule / Extrait / Accompagnant</span>
-                  <span class="fw-semibold">{{ patient.matriculeExtraitAccompagnant || '-' }}</span>
-                </div>
-                <div class="col-6 border-bottom pb-2">
-                  <span class="d-block small text-muted">Date de Prise en Charge</span>
-                  <span>{{ (patient.datePriseEnCharge | date:'dd/MM/yyyy') || '-' }}</span>
-                </div>
-                <div class="col-6 border-bottom pb-2">
-                  <span class="d-block small text-muted">Service</span>
-                  <span>{{ patient.service || '-' }}</span>
-                </div>
-                <div class="col-12 border-bottom pb-2">
-                  <span class="d-block small text-muted">Prestation et Médicament</span>
-                  <p class="mb-0 text-secondary small bg-light p-2 rounded">{{ patient.prestationMedicament || '-' }}</p>
-                </div>
-                <div class="col-12">
-                  <span class="d-block small text-muted">Diagnostic / Motif de consultation</span>
-                  <p class="mb-0 text-secondary small bg-light p-2 rounded">{{ patient.diagnosticMotif || '-' }}</p>
-                </div>
+                <ng-container *ngFor="let info of specInfo">
+                  <div class="col-12" *ngIf="info.full">
+                    <span class="d-block small text-muted">{{ info.label }}</span>
+                    <p class="mb-0 text-secondary small bg-light p-2 rounded">{{ info.value }}</p>
+                  </div>
+                  <div class="col-6 border-bottom pb-2" *ngIf="!info.full">
+                    <span class="d-block small text-muted">{{ info.label }}</span>
+                    <span class="fw-semibold">{{ info.value }}</span>
+                  </div>
+                </ng-container>
               </div>
             </div>
 
@@ -291,6 +277,7 @@ export class PatientDetailComponent implements OnInit {
 
   patient?: Patient;
   enrolement?: Enrolement;
+  specInfo: { label: string; value: string; full?: boolean }[] = [];
 
   ngOnInit(): void {
     const id = +this.route.snapshot.paramMap.get('id')!;
@@ -301,6 +288,7 @@ export class PatientDetailComponent implements OnInit {
     this.patientService.getPatientById(id).subscribe({
       next: (data) => {
         this.patient = data;
+        this.specInfo = this.specificInfo(data);
         this.checkEnrolement(id);
       },
       error: (err) => {
@@ -342,17 +330,24 @@ export class PatientDetailComponent implements OnInit {
     return age;
   }
 
+  private static LABELS: Record<string, string> = {
+    'classique': 'Classique',
+    '0-5ans': 'Enfants de moins de 5 ans',
+    'cesarienne': 'Césarienne',
+    'dialyse-peritoneale': 'Dialyse péritonéale',
+    'hemodialyse': 'Hémodialyse',
+    'bsf': 'Bourse de Sécurité Familiale',
+    'cec': 'Carte Égalité des Chances',
+    'plan-sesame': 'Plan Sésame',
+    'ndongo-dara': 'Plan Ndongo Dara / Élève'
+  };
+
   getCategoryLabel(patient: Patient): string {
-    if (patient.categorie) {
-      switch (patient.categorie) {
-        case '0-5ans': return '0 à 5 ans';
-        case 'plan-sesame': return 'Plan Sésame';
-        case 'classique': return 'Classique';
-        case 'cesarienne': return 'Césarienne';
-      }
+    if (patient.categorie && PatientDetailComponent.LABELS[patient.categorie]) {
+      return PatientDetailComponent.LABELS[patient.categorie];
     }
     const age = this.calculateAge(patient.dateNaissance);
-    if (age <= 5) return '0 à 5 ans';
+    if (age <= 5) return 'Enfants de moins de 5 ans';
     if (age >= 60) return 'Plan Sésame';
     if (patient.photoIdentiteRecto || patient.photoIdentiteVerso) return 'Classique';
     if (patient.sexe === 'F') return 'Césarienne';
@@ -361,13 +356,56 @@ export class PatientDetailComponent implements OnInit {
 
 
   getCategoryBadgeClass(patient: Patient): string {
-    const cat = this.getCategoryLabel(patient);
-    switch (cat) {
-      case '0 à 5 ans': return 'csu-badge-primary';
-      case 'Plan Sésame': return 'csu-badge-warning';
-      case 'Classique': return 'csu-badge-success';
-      case 'Césarienne': return 'csu-badge-danger';
+    switch (patient.categorie) {
+      case '0-5ans': return 'csu-badge-primary';
+      case 'plan-sesame': return 'csu-badge-warning';
+      case 'classique': return 'csu-badge-success';
+      case 'cesarienne': return 'csu-badge-danger';
       default: return 'csu-badge-secondary';
     }
+  }
+
+  /** Construit la liste des champs spécifiques (renseignés) selon la catégorie du patient. */
+  specificInfo(p: Patient): { label: string; value: string; full?: boolean }[] {
+    const out: { label: string; value: string; full?: boolean }[] = [];
+    const add = (label: string, value: any, full = false) => {
+      if (value !== null && value !== undefined && `${value}`.trim() !== '') {
+        out.push({ label, value: `${value}`, full });
+      }
+    };
+    // Formatage déterministe (sans toLocale*) pour rester cohérent entre rendu serveur (SSR) et navigateur
+    const d = (v?: string) => {
+      if (!v) return '';
+      const parts = v.split('T')[0].split('-');
+      return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : v;
+    };
+    const dh = (v?: string) => {
+      if (!v) return '';
+      const [datePart, timePart] = v.split('T');
+      const parts = datePart.split('-');
+      const t = (timePart || '').slice(0, 5);
+      return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}${t ? ' ' + t : ''}` : v;
+    };
+
+    add('N° dans le registre', p.numeroRegistre);
+    add('N° Matricule', p.numeroMatricule);
+    add('N° Matricule / Extrait / Accompagnant', p.matriculeExtraitAccompagnant);
+    add('N° CNI', p.numeroCni);
+    add('IRC / IRA', p.ircIra);
+    add('Date de prise en charge', d(p.datePriseEnCharge));
+    add('Service', p.service);
+    add('Indication / Motif de CBT', p.indicationMotifCbt, true);
+    add('N° Registre Bloc opératoire', p.numeroRegistreBloc);
+    add('Date et Heure Intervention', dh(p.dateHeureIntervention));
+    add('Durée Hospitalisation (jours)', p.dureeHospitalisationJours);
+    add('Prestation(s)', p.prestationMedicament, true);
+    add('Diagnostic / Motif de consultation', p.diagnosticMotif, true);
+    add('Nbre de Poches', p.nbrePoches);
+    add('Nbre de Séances', p.nbreSeances);
+    add('Quantité', p.quantite);
+    add('Forfait', p.forfait);
+    add('Prix Unitaire', p.prixUnitaire);
+    add('Montant Total', p.montantTotal);
+    return out;
   }
 }

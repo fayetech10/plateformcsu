@@ -15,7 +15,17 @@ export interface EnrolementRequest {
 export interface Enrolement {
   id?: number;
   numeroBeneficiaire: string;
-  patientId: number;
+
+  // Identité du bénéficiaire (l'enrôlement est autonome, non lié à un patient)
+  prenom?: string;
+  nom?: string;
+  telephone?: string;
+  sexe?: string;
+  dateNaissance?: string;
+  adresse?: string;
+
+  // Conservés optionnels pour compatibilité (anciens enrôlements liés à un patient)
+  patientId?: number;
   patient?: Patient;
   dateEnrolement: string;
   statut: StatutEnrolement;

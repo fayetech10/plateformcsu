@@ -21,14 +21,35 @@ export interface Patient {
   agentNom?: string;
   supprime?: boolean;
   
-  // Specific fields for 0-5 ans
-  numeroRegistre?: string;
-  matriculeExtraitAccompagnant?: string;
+  // Identifiants selon catégorie
+  numeroMatricule?: string;              // N° Matricule / Code Bénéficiaire / CNI
+  numeroCni?: string;                    // N° CNI (Plan Sésame)
+  numeroRegistre?: string;               // N° dans le registre (Enfants -5 ans)
+  matriculeExtraitAccompagnant?: string; // N° Matricule / Extrait / accompagnant (Enfants -5 ans)
+
+  // Prise en charge / médical
   datePriseEnCharge?: string;
   service?: string;
-  prestationMedicament?: string;
+  ircIra?: string;                       // IRC / IRA (Dialyse, Hémodialyse)
+  prestationMedicament?: string;         // Prestation(s) / Prestations et médicaments
   diagnosticMotif?: string;
-  
+
+  // Spécifiques Césarienne
+  indicationMotifCbt?: string;
+  numeroRegistreBloc?: string;
+  dateHeureIntervention?: string;
+  dureeHospitalisationJours?: number;
+
+  // Spécifiques Dialyse / Hémodialyse
+  nbrePoches?: number;
+  nbreSeances?: number;
+
+  // Facturation (une ligne par patient)
+  quantite?: number;
+  forfait?: number;
+  prixUnitaire?: number;
+  montantTotal?: number;
+
   // Identity photos
   photoIdentiteRecto?: string;
   photoIdentiteVerso?: string;

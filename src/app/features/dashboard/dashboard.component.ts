@@ -8,12 +8,11 @@ import { Chart, registerables } from 'chart.js';
 import { PointageReminderComponent } from '../pointage/pointage-reminder.component';
 import { AgentNotificationsComponent } from '../pointage/agent-notifications.component';
 import { ActivitesAVenirComponent } from '../activites/activites-a-venir.component';
-import { PatientChartsComponent } from '../patients/patient-charts.component';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterLink, PointageReminderComponent, AgentNotificationsComponent, ActivitesAVenirComponent, PatientChartsComponent],
+  imports: [CommonModule, RouterLink, PointageReminderComponent, AgentNotificationsComponent, ActivitesAVenirComponent],
   template: `
     <div class="container-fluid animate-fade-in">
       <!-- Rappel de pointage (visible dès l'entrée sur la plateforme) -->
@@ -222,8 +221,6 @@ import { PatientChartsComponent } from '../patients/patient-charts.component';
         </div>
       </div>
 
-      <!-- Statistiques visuelles des patients -->
-      <app-patient-charts />
 
       <div class="row g-4 mb-4">
         <!-- Prochaines activités planifiées -->

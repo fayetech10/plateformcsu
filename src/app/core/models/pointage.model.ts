@@ -37,7 +37,6 @@ export interface PointageArriveeResponse {
   horsZone?: boolean | null;
   positionVerifiee?: boolean | null;
   distanceMetres?: number | null;
-  alerte?: string;
 }
 
 export interface PointagesJour {

@@ -16,6 +16,17 @@ interface RegionData {
   };
 }
 
+type FieldType = 'text' | 'date' | 'datetime' | 'number' | 'select' | 'textarea';
+
+interface SpecificField {
+  key: string;
+  label: string;
+  type: FieldType;
+  required?: boolean;
+  options?: string[];
+  placeholder?: string;
+}
+
 @Component({
   selector: 'app-patient-form',
   standalone: true,
@@ -263,8 +274,8 @@ interface RegionData {
                 </div>
               </div>
 
-              <!-- Section 3 : Pièce d'Identité (Classique uniquement) -->
-              @if (patientType === 'classique') {
+              <!-- Section 3 : Pièce d'Identité (toutes catégories) -->
+              @if (patientType) {
                 <h4 class="mb-4 text-csu-secondary">
                   <i class="bi bi-card-image me-2"></i> Pièce d'Identité
                 </h4>
@@ -272,7 +283,7 @@ interface RegionData {
                 <div class="row g-3 mb-4 animate-fade-in">
                   <!-- Photo Recto -->
                   <div class="col-12 col-md-6">
-                    <label class="csu-form-label">Recto de la pièce d'identité <span class="text-danger">*</span></label>
+                    <label class="csu-form-label">Recto de la pièce d'identité @if (patientType === 'classique') {<span class="text-danger">*</span>}</label>
                     <div class="photo-upload-container" [class.has-image]="photoRectoUrl">
                       @if (!photoRectoUrl) {
                         <div class="upload-placeholder" (click)="rectoInput.click()">
@@ -301,7 +312,7 @@ interface RegionData {
 
                   <!-- Photo Verso -->
                   <div class="col-12 col-md-6">
-                    <label class="csu-form-label">Verso de la pièce d'identité <span class="text-danger">*</span></label>
+                    <label class="csu-form-label">Verso de la pièce d'identité @if (patientType === 'classique') {<span class="text-danger">*</span>}</label>
                     <div class="photo-upload-container" [class.has-image]="photoVersoUrl">
                       @if (!photoVersoUrl) {
                         <div class="upload-placeholder" (click)="versoInput.click()">
@@ -330,48 +341,51 @@ interface RegionData {
                 </div>
               }
 
-              <!-- Section Spécifique : 0 à 5 ans -->
-              @if (patientType === '0-5ans') {
+              <!-- Section Spécifique : champs propres à la catégorie (modèle Excel officiel) -->
+              @if (specificFields.length) {
                 <h4 class="mb-4 text-csu-secondary">
-                  <i class="bi bi-file-medical me-2"></i> Informations Médicales (0 à 5 ans)
+                  <i class="bi bi-clipboard2-pulse me-2"></i> Informations spécifiques — {{ getTypeLabel(patientType || '') }}
                 </h4>
                 <div class="row g-3 mb-4 animate-fade-in">
-                  <div class="col-12 col-md-6">
-                    <div class="csu-form-group">
-                      <label class="csu-form-label" for="numeroRegistre">Numéro de Registre</label>
-                      <input id="numeroRegistre" type="text" class="csu-form-control" formControlName="numeroRegistre" placeholder="Ex: REG-2024-001" />
+                  @for (f of specificFields; track f.key) {
+                    <div class="col-12" [class.col-md-6]="f.type !== 'textarea'">
+                      <div class="csu-form-group">
+                        <label class="csu-form-label" [for]="f.key">
+                          {{ f.label }} @if (f.required) {<span class="text-danger">*</span>}
+                        </label>
+                        @switch (f.type) {
+                          @case ('textarea') {
+                            <textarea [id]="f.key" rows="2" class="csu-form-control" [class.is-invalid]="isFieldInvalid(f.key)" [formControlName]="f.key" [attr.placeholder]="f.placeholder || ''"></textarea>
+                          }
+                          @case ('select') {
+                            <select [id]="f.key" class="csu-form-control csu-form-select" [class.is-invalid]="isFieldInvalid(f.key)" [formControlName]="f.key">
+                              <option value="">Sélectionnez</option>
+                              @for (opt of f.options || []; track opt) {
+                                <option [value]="opt">{{ opt }}</option>
+                              }
+                            </select>
+                          }
+                          @case ('number') {
+                            <input [id]="f.key" type="number" step="any" class="csu-form-control" [class.is-invalid]="isFieldInvalid(f.key)" [formControlName]="f.key" [attr.placeholder]="f.placeholder || ''" />
+                          }
+                          @case ('date') {
+                            <input [id]="f.key" type="date" class="csu-form-control" [class.is-invalid]="isFieldInvalid(f.key)" [formControlName]="f.key" />
+                          }
+                          @case ('datetime') {
+                            <input [id]="f.key" type="datetime-local" class="csu-form-control" [class.is-invalid]="isFieldInvalid(f.key)" [formControlName]="f.key" />
+                          }
+                          @default {
+                            <input [id]="f.key" type="text" class="csu-form-control" [class.is-invalid]="isFieldInvalid(f.key)" [formControlName]="f.key" [attr.placeholder]="f.placeholder || ''" />
+                          }
+                        }
+                        @if (isFieldInvalid(f.key)) {
+                          <div class="csu-invalid-feedback">
+                            <i class="bi bi-info-circle"></i> Ce champ est requis
+                          </div>
+                        }
+                      </div>
                     </div>
-                  </div>
-                  <div class="col-12 col-md-6">
-                    <div class="csu-form-group">
-                      <label class="csu-form-label" for="matriculeExtraitAccompagnant">N° Matricule / Extrait / Accompagnant</label>
-                      <input id="matriculeExtraitAccompagnant" type="text" class="csu-form-control" formControlName="matriculeExtraitAccompagnant" placeholder="N° d'identification" />
-                    </div>
-                  </div>
-                  <div class="col-12 col-md-6">
-                    <div class="csu-form-group">
-                      <label class="csu-form-label" for="datePriseEnCharge">Date de Prise en Charge</label>
-                      <input id="datePriseEnCharge" type="date" class="csu-form-control" formControlName="datePriseEnCharge" />
-                    </div>
-                  </div>
-                  <div class="col-12 col-md-6">
-                    <div class="csu-form-group">
-                      <label class="csu-form-label" for="service">Service</label>
-                      <input id="service" type="text" class="csu-form-control" formControlName="service" placeholder="Service médical" />
-                    </div>
-                  </div>
-                  <div class="col-12 col-md-6">
-                    <div class="csu-form-group">
-                      <label class="csu-form-label" for="prestationMedicament">Prestation et Médicament</label>
-                      <textarea id="prestationMedicament" rows="2" class="csu-form-control" formControlName="prestationMedicament" placeholder="Détails de la prestation..."></textarea>
-                    </div>
-                  </div>
-                  <div class="col-12 col-md-6">
-                    <div class="csu-form-group">
-                      <label class="csu-form-label" for="diagnosticMotif">Diagnostic / Motif de consultation</label>
-                      <textarea id="diagnosticMotif" rows="2" class="csu-form-control" formControlName="diagnosticMotif" placeholder="Motif de la visite..."></textarea>
-                    </div>
-                  </div>
+                  }
                 </div>
               }
 
@@ -466,6 +480,31 @@ interface RegionData {
       background: rgba(123, 31, 162, 0.08);
       color: #7B1FA2;
       border: 1px solid rgba(123, 31, 162, 0.15);
+    }
+    .badge-type-dialyse {
+      background: rgba(0, 131, 143, 0.08);
+      color: #00838F;
+      border: 1px solid rgba(0, 131, 143, 0.15);
+    }
+    .badge-type-hemodialyse {
+      background: rgba(216, 67, 21, 0.08);
+      color: #D84315;
+      border: 1px solid rgba(216, 67, 21, 0.15);
+    }
+    .badge-type-bsf {
+      background: rgba(46, 125, 50, 0.08);
+      color: #2E7D32;
+      border: 1px solid rgba(46, 125, 50, 0.15);
+    }
+    .badge-type-cec {
+      background: rgba(40, 53, 147, 0.08);
+      color: #283593;
+      border: 1px solid rgba(40, 53, 147, 0.15);
+    }
+    .badge-type-ndongo {
+      background: rgba(239, 108, 0, 0.08);
+      color: #EF6C00;
+      border: 1px solid rgba(239, 108, 0, 0.15);
     }
     .photo-upload-container {
       border: 2px dashed var(--csu-border);
@@ -611,13 +650,113 @@ export class PatientFormComponent implements OnInit {
     adresse: ['', [Validators.required]],
     photoIdentiteRecto: [''],
     photoIdentiteVerso: [''],
+    // Champs spécifiques (selon la catégorie / modèle Excel officiel)
+    numeroMatricule: [''],
+    numeroCni: [''],
     numeroRegistre: [''],
     matriculeExtraitAccompagnant: [''],
     datePriseEnCharge: [''],
     service: [''],
+    ircIra: [''],
     prestationMedicament: [''],
-    diagnosticMotif: ['']
+    diagnosticMotif: [''],
+    indicationMotifCbt: [''],
+    numeroRegistreBloc: [''],
+    dateHeureIntervention: [''],
+    dureeHospitalisationJours: [null as number | null],
+    nbrePoches: [null as number | null],
+    nbreSeances: [null as number | null],
+    quantite: [null as number | null],
+    forfait: [null as number | null],
+    prixUnitaire: [null as number | null],
+    montantTotal: [null as number | null]
   });
+
+  // Configuration des champs spécifiques par catégorie (ordre & libellés du modèle Excel officiel)
+  private fieldConfig: Record<string, SpecificField[]> = {
+    'classique': [
+      { key: 'numeroMatricule', label: 'N° Matricule / Code Bénéficiaire', type: 'text', required: true, placeholder: 'Ex: MAT-2026-001' },
+      { key: 'datePriseEnCharge', label: 'Date de prise en charge', type: 'date', required: true },
+      { key: 'service', label: 'Service', type: 'text', required: true, placeholder: 'Service médical' },
+      { key: 'prestationMedicament', label: 'Prestation(s)', type: 'text' },
+      { key: 'quantite', label: 'Quantité', type: 'number' },
+      { key: 'prixUnitaire', label: 'P.U', type: 'number' },
+      { key: 'montantTotal', label: 'Montant Total', type: 'number' }
+    ],
+    '0-5ans': [
+      { key: 'numeroRegistre', label: 'N° dans le registre', type: 'text', required: true, placeholder: 'Ex: REG-2024-001' },
+      { key: 'matriculeExtraitAccompagnant', label: 'N° Matricule / N° Extrait de naissance / N° accompagnant', type: 'text', required: true },
+      { key: 'datePriseEnCharge', label: 'Date de prise en charge', type: 'date', required: true },
+      { key: 'service', label: 'Service', type: 'text', required: true },
+      { key: 'prestationMedicament', label: 'Prestations et médicaments', type: 'textarea' },
+      { key: 'diagnosticMotif', label: 'Diagnostic / Motif de consultation', type: 'textarea' },
+      { key: 'forfait', label: 'Forfait', type: 'number' },
+      { key: 'montantTotal', label: 'Montant Total', type: 'number' }
+    ],
+    'cesarienne': [
+      { key: 'numeroMatricule', label: 'N° Matricule / N° CNI Patient / N° accompagnant', type: 'text', required: true },
+      { key: 'indicationMotifCbt', label: 'Indication / Motif de CBT', type: 'textarea' },
+      { key: 'numeroRegistreBloc', label: 'N° Registre Bloc opératoire', type: 'text' },
+      { key: 'dateHeureIntervention', label: 'Date et Heure Intervention', type: 'datetime' },
+      { key: 'dureeHospitalisationJours', label: 'Durée Hospitalisation (jours)', type: 'number' }
+    ],
+    'dialyse-peritoneale': [
+      { key: 'numeroMatricule', label: 'N° Matricule / N° CNI Patient / N° accompagnant', type: 'text', required: true },
+      { key: 'ircIra', label: 'IRC / IRA', type: 'select', required: true, options: ['IRC', 'IRA'] },
+      { key: 'datePriseEnCharge', label: 'Date de prise en charge', type: 'date' },
+      { key: 'nbrePoches', label: 'Nbre de Poches', type: 'number' },
+      { key: 'prixUnitaire', label: 'Prix Unitaire', type: 'number' },
+      { key: 'montantTotal', label: 'Prix Total', type: 'number' }
+    ],
+    'hemodialyse': [
+      { key: 'numeroMatricule', label: 'N° Matricule / N° CNI Patient / N° accompagnant', type: 'text', required: true },
+      { key: 'ircIra', label: 'IRC / IRA', type: 'select', options: ['IRC', 'IRA'] },
+      { key: 'nbreSeances', label: 'Nbre de Séances', type: 'number' },
+      { key: 'prixUnitaire', label: 'Prix Unitaire', type: 'number' },
+      { key: 'montantTotal', label: 'Prix Total', type: 'number' }
+    ],
+    'bsf': [
+      { key: 'numeroMatricule', label: 'N° Matricule / CNI', type: 'text', required: true },
+      { key: 'datePriseEnCharge', label: 'Date de prise en charge', type: 'date', required: true },
+      { key: 'service', label: 'Service', type: 'text', required: true },
+      { key: 'prestationMedicament', label: 'Prestation(s)', type: 'text' },
+      { key: 'quantite', label: 'Quantité', type: 'number' },
+      { key: 'prixUnitaire', label: 'P.U', type: 'number' },
+      { key: 'montantTotal', label: 'Montant facturé à la SEN-CSU', type: 'number' }
+    ],
+    'cec': [
+      { key: 'numeroMatricule', label: 'N° Matricule / CNI', type: 'text', required: true },
+      { key: 'datePriseEnCharge', label: 'Date de prise en charge', type: 'date', required: true },
+      { key: 'service', label: 'Service', type: 'text', required: true },
+      { key: 'prestationMedicament', label: 'Prestation(s)', type: 'text' },
+      { key: 'quantite', label: 'Quantité', type: 'number' },
+      { key: 'prixUnitaire', label: 'P.U', type: 'number' },
+      { key: 'montantTotal', label: 'Montant facturé à la SEN-CSU', type: 'number' }
+    ],
+    'plan-sesame': [
+      { key: 'numeroMatricule', label: 'N° Matricule', type: 'text', required: true },
+      { key: 'numeroCni', label: 'N° CNI', type: 'text', required: true },
+      { key: 'datePriseEnCharge', label: 'Date de prise en charge', type: 'date', required: true },
+      { key: 'service', label: 'Service', type: 'text', required: true },
+      { key: 'prestationMedicament', label: 'Prestation(s)', type: 'text' },
+      { key: 'quantite', label: 'Quantité', type: 'number' },
+      { key: 'prixUnitaire', label: 'P.U', type: 'number' },
+      { key: 'montantTotal', label: 'Montant facturé à la SEN-CSU', type: 'number' }
+    ],
+    'ndongo-dara': [
+      { key: 'numeroMatricule', label: 'N° Matricule / Code Bénéficiaire', type: 'text', required: true },
+      { key: 'datePriseEnCharge', label: 'Date de prise en charge', type: 'date', required: true },
+      { key: 'service', label: 'Service', type: 'text', required: true },
+      { key: 'prestationMedicament', label: 'Prestation(s)', type: 'text' },
+      { key: 'quantite', label: 'Quantité', type: 'number' },
+      { key: 'prixUnitaire', label: 'P.U', type: 'number' },
+      { key: 'montantTotal', label: 'Montant Total', type: 'number' }
+    ]
+  };
+
+  get specificFields(): SpecificField[] {
+    return (this.patientType && this.fieldConfig[this.patientType]) || [];
+  }
 
   ngOnInit(): void {
     this.patientType = this.route.snapshot.queryParamMap.get('type');
@@ -641,6 +780,41 @@ export class PatientFormComponent implements OnInit {
         this.patientForm.get('sexe')?.disable();
       }
     }
+
+    this.applyDynamicValidators();
+    this.setupMontantAutoCalc();
+  }
+
+  /** Active les validateurs « requis » sur les champs spécifiques de la catégorie courante. */
+  private applyDynamicValidators(): void {
+    const allKeys = new Set<string>();
+    Object.values(this.fieldConfig).forEach(fields => fields.forEach(f => allKeys.add(f.key)));
+    // Réinitialise tous les champs spécifiques
+    allKeys.forEach(k => {
+      const ctrl = this.patientForm.get(k);
+      if (ctrl) { ctrl.clearValidators(); ctrl.updateValueAndValidity({ emitEvent: false }); }
+    });
+    // Applique les validateurs requis de la catégorie
+    this.specificFields.filter(f => f.required).forEach(f => {
+      const ctrl = this.patientForm.get(f.key);
+      if (ctrl) { ctrl.setValidators([Validators.required]); ctrl.updateValueAndValidity({ emitEvent: false }); }
+    });
+  }
+
+  /** Calcule automatiquement le montant total = quantité × prix unitaire. */
+  private setupMontantAutoCalc(): void {
+    const recompute = () => {
+      const qty = this.patientForm.get('quantite')?.value
+        ?? this.patientForm.get('nbrePoches')?.value
+        ?? this.patientForm.get('nbreSeances')?.value;
+      const pu = this.patientForm.get('prixUnitaire')?.value;
+      if (qty != null && pu != null && !isNaN(+qty) && !isNaN(+pu)) {
+        this.patientForm.get('montantTotal')?.setValue(+qty * +pu, { emitEvent: false });
+      }
+    };
+    ['quantite', 'nbrePoches', 'nbreSeances', 'prixUnitaire'].forEach(k => {
+      this.patientForm.get(k)?.valueChanges.subscribe(() => recompute());
+    });
   }
 
 
@@ -687,12 +861,25 @@ export class PatientFormComponent implements OnInit {
       adresse: patient.adresse,
       photoIdentiteRecto: patient.photoIdentiteRecto || '',
       photoIdentiteVerso: patient.photoIdentiteVerso || '',
+      numeroMatricule: patient.numeroMatricule || '',
+      numeroCni: patient.numeroCni || '',
       numeroRegistre: patient.numeroRegistre || '',
       matriculeExtraitAccompagnant: patient.matriculeExtraitAccompagnant || '',
       datePriseEnCharge: patient.datePriseEnCharge ? patient.datePriseEnCharge.split('T')[0] : '',
       service: patient.service || '',
+      ircIra: patient.ircIra || '',
       prestationMedicament: patient.prestationMedicament || '',
-      diagnosticMotif: patient.diagnosticMotif || ''
+      diagnosticMotif: patient.diagnosticMotif || '',
+      indicationMotifCbt: patient.indicationMotifCbt || '',
+      numeroRegistreBloc: patient.numeroRegistreBloc || '',
+      dateHeureIntervention: patient.dateHeureIntervention ? patient.dateHeureIntervention.substring(0, 16) : '',
+      dureeHospitalisationJours: patient.dureeHospitalisationJours ?? null,
+      nbrePoches: patient.nbrePoches ?? null,
+      nbreSeances: patient.nbreSeances ?? null,
+      quantite: patient.quantite ?? null,
+      forfait: patient.forfait ?? null,
+      prixUnitaire: patient.prixUnitaire ?? null,
+      montantTotal: patient.montantTotal ?? null
     });
 
     this.photoRectoUrl = patient.photoIdentiteRecto || null;
@@ -727,6 +914,9 @@ export class PatientFormComponent implements OnInit {
     if (this.patientType === 'cesarienne') {
       this.patientForm.get('sexe')?.disable();
     }
+
+    // Réapplique les validateurs spécifiques maintenant que la catégorie est connue
+    this.applyDynamicValidators();
   }
 
   onRegionChange(): void {
@@ -779,9 +969,14 @@ export class PatientFormComponent implements OnInit {
   getTypeLabel(type: string): string {
     switch (type) {
       case 'cesarienne': return 'Césarienne';
-      case '0-5ans': return '0 à 5 ans';
+      case '0-5ans': return 'Enfants de moins de 5 ans';
       case 'classique': return 'Classique';
+      case 'dialyse-peritoneale': return 'Dialyse péritonéale';
+      case 'hemodialyse': return 'Hémodialyse';
+      case 'bsf': return 'Bourse de Sécurité Familiale';
+      case 'cec': return 'Carte Égalité des Chances';
       case 'plan-sesame': return 'Plan Sésame';
+      case 'ndongo-dara': return 'Plan Ndongo Dara / Élève';
       default: return type;
     }
   }
@@ -792,6 +987,11 @@ export class PatientFormComponent implements OnInit {
       case '0-5ans': return 'badge-type-enfant';
       case 'classique': return 'badge-type-classique';
       case 'plan-sesame': return 'badge-type-sesame';
+      case 'dialyse-peritoneale': return 'badge-type-dialyse';
+      case 'hemodialyse': return 'badge-type-hemodialyse';
+      case 'bsf': return 'badge-type-bsf';
+      case 'cec': return 'badge-type-cec';
+      case 'ndongo-dara': return 'badge-type-ndongo';
       default: return 'bg-primary text-white';
     }
   }
@@ -802,6 +1002,11 @@ export class PatientFormComponent implements OnInit {
       case '0-5ans': return 'bi-emoji-smile';
       case 'classique': return 'bi-person';
       case 'plan-sesame': return 'bi-heart-pulse';
+      case 'dialyse-peritoneale': return 'bi-droplet-half';
+      case 'hemodialyse': return 'bi-activity';
+      case 'bsf': return 'bi-piggy-bank';
+      case 'cec': return 'bi-credit-card-2-front';
+      case 'ndongo-dara': return 'bi-mortarboard';
       default: return 'bi-person';
     }
   }
