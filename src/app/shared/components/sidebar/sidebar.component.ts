@@ -1,4 +1,4 @@
-import { Component, Input, inject } from '@angular/core';
+import { Component, Input, Output, EventEmitter, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
@@ -8,7 +8,7 @@ import { AuthService } from '../../../core/services/auth.service';
   standalone: true,
   imports: [CommonModule, RouterLink, RouterLinkActive],
   template: `
-    <div class="csu-sidebar" [class.collapsed]="collapsed">
+    <div class="csu-sidebar" [class.collapsed]="collapsed" [class.mobile-open]="mobileOpen" (click)="onSidebarClick($event)">
       <div class="csu-sidebar-brand">
         <div class="csu-sidebar-brand-icon" style="background: transparent; box-shadow: none;">
           <img src="assets/logo.png" alt="CSU Logo" style="max-height: 40px; border-radius: 8px;" />
@@ -111,6 +111,20 @@ export class SidebarComponent {
   private authService = inject(AuthService);
 
   @Input() collapsed = false;
+  @Input() mobileOpen = false;
+  @Output() linkClicked = new EventEmitter<void>();
+
+  /**
+   * Quand on clique sur un lien de navigation (ancre <a>), on émet l'événement
+   * pour fermer le drawer en mobile. Les clics sur les autres zones (header,
+   * espace vide…) ne déclenchent rien.
+   */
+  onSidebarClick(event: MouseEvent): void {
+    const target = event.target as HTMLElement;
+    if (target && target.closest('a.csu-sidebar-link')) {
+      this.linkClicked.emit();
+    }
+  }
 
   get isAdmin(): boolean {
     return this.authService.isAdmin();

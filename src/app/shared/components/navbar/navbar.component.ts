@@ -12,8 +12,8 @@ import Swal from 'sweetalert2';
   template: `
     <nav class="csu-navbar" [class.expanded]="isSidebarCollapsed">
       <div class="csu-navbar-left">
-        <button class="csu-navbar-toggle" (click)="toggleSidebar()">
-          <i class="bi" [class.bi-list]="isSidebarCollapsed" [class.bi-x]="!isSidebarCollapsed"></i>
+        <button class="csu-navbar-toggle" (click)="toggleSidebar()" aria-label="Ouvrir le menu">
+          <i class="bi bi-list"></i>
         </button>
         <div class="d-none d-md-flex align-items-center gap-2">
           <span class="badge bg-csu-primary-light text-csu-primary px-3 py-2 rounded-pill fw-semibold">
