@@ -4,12 +4,13 @@ import { UtilisateurService } from '../../../core/services/utilisateur.service';
 import { Utilisateur } from '../../../core/models/utilisateur.model';
 import { RouterLink } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { CardListItemComponent } from '../../../shared/ui';
 import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-utilisateur-list',
   standalone: true,
-  imports: [CommonModule, RouterLink, ReactiveFormsModule],
+  imports: [CommonModule, RouterLink, ReactiveFormsModule, CardListItemComponent],
   template: `
     <div class="container-fluid animate-fade-in">
       <!-- Header -->
@@ -21,7 +22,7 @@ import Swal from 'sweetalert2';
           </h1>
           <p class="csu-page-subtitle">Gérez les comptes des agents CSU, superviseurs et administrateurs de la plateforme</p>
         </div>
-        <div>
+        <div class="csu-page-actions">
           <a routerLink="/admin/utilisateurs/nouveau" class="csu-btn csu-btn-primary">
             <i class="bi bi-person-plus-fill"></i> Nouvel Utilisateur
           </a>
@@ -52,19 +53,22 @@ import Swal from 'sweetalert2';
         </form>
       </div>
 
-      <!-- Table -->
-      <div class="csu-table-wrapper">
-        @if (loading) {
-          <div class="csu-loading">
-            <div class="csu-spinner"></div>
-          </div>
-        } @else if (users.length === 0) {
+      <!-- États : chargement / vide -->
+      @if (loading) {
+        <div class="csu-table-wrapper">
+          <div class="csu-loading"><div class="csu-spinner"></div></div>
+        </div>
+      } @else if (users.length === 0) {
+        <div class="csu-table-wrapper">
           <div class="csu-empty-state">
             <i class="bi bi-people"></i>
             <h3>Aucun utilisateur trouvé</h3>
             <p>Aucun compte utilisateur ne correspond à votre recherche.</p>
           </div>
-        } @else {
+        </div>
+      } @else {
+        <!-- ===== Tableau (desktop ≥ lg) ===== -->
+        <div class="csu-table-wrapper d-none d-lg-block">
           <table class="csu-table">
             <thead>
               <tr>
@@ -132,32 +136,76 @@ import Swal from 'sweetalert2';
               }
             </tbody>
           </table>
+        </div>
 
-          <!-- Pagination -->
+        <!-- ===== Cartes résumé (mobile/tablette < lg) ===== -->
+        <div class="csu-list d-lg-none">
+          @for (u of users; track u.id) {
+            <csu-list-card>
+              <div class="csu-list-card-head">
+                <div class="csu-list-card-lead">{{ u.prenom.charAt(0) }}{{ u.nom.charAt(0) }}</div>
+                <div class="csu-list-card-body">
+                  <div class="csu-list-card-title">{{ u.prenom }} {{ u.nom }}</div>
+                  <div class="csu-list-card-sub">&#64;{{ u.username }}</div>
+                </div>
+                <span class="csu-badge"
+                  [class.csu-badge-secondary]="u.role === 'ADMIN'"
+                  [class.csu-badge-info]="u.role === 'SUPERVISEUR'"
+                  [class.csu-badge-success]="u.role === 'AGENT'">
+                  {{ u.role }}
+                </span>
+              </div>
+
+              <div class="csu-list-card-meta">
+                <div class="meta"><span class="meta-label">Email</span><span class="meta-value">{{ u.email || '-' }}</span></div>
+                <div class="meta"><span class="meta-label">Téléphone</span><span class="meta-value">{{ u.telephone || '-' }}</span></div>
+                <div class="meta"><span class="meta-label">Bureau</span><span class="meta-value">{{ u.bureauCsuNom || u.bureauCsu?.nom || 'Non affecté' }}</span></div>
+                <div class="meta"><span class="meta-label">Créé le</span><span class="meta-value">{{ u.dateCreation | date:'dd/MM/yyyy' }}</span></div>
+              </div>
+
+              <div class="form-check form-switch d-flex align-items-center gap-2" style="margin:0.75rem 0 0;padding-left:2.5em;">
+                <input class="form-check-input m-0" type="checkbox" [checked]="u.actif" (change)="toggleActive(u)" [attr.aria-label]="'Activer ou bloquer ' + u.prenom" />
+                <span class="small fw-semibold" [class.text-success]="u.actif" [class.text-danger]="!u.actif">{{ u.actif ? 'Compte actif' : 'Compte bloqué' }}</span>
+              </div>
+
+              <div class="csu-list-card-actions">
+                <a [routerLink]="['/admin/utilisateurs', u.id, 'modifier']" class="csu-btn csu-btn-light">
+                  <i class="bi bi-pencil"></i> Modifier
+                </a>
+                <button (click)="onDelete(u)" class="csu-btn csu-btn-light text-csu-danger" aria-label="Supprimer">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+            </csu-list-card>
+          }
+        </div>
+
+        <!-- ===== Pagination (partagée) ===== -->
+        <div class="csu-pagination-card">
           <div class="csu-pagination">
             <div class="csu-pagination-info">
               Affichage de {{ page * size + 1 }} à {{ Math.min((page + 1) * size, totalElements) }} sur {{ totalElements }} utilisateurs
             </div>
             <div class="csu-pagination-controls">
-              <button class="csu-pagination-btn" [disabled]="page === 0" (click)="onPageChange(page - 1)">
+              <button class="csu-pagination-btn" [disabled]="page === 0" (click)="onPageChange(page - 1)" aria-label="Page précédente">
                 <i class="bi bi-chevron-left"></i>
               </button>
               @for (pNum of getPagesArray(); track pNum) {
-                <button 
-                  class="csu-pagination-btn" 
-                  [class.active]="pNum === page" 
+                <button
+                  class="csu-pagination-btn"
+                  [class.active]="pNum === page"
                   (click)="onPageChange(pNum)"
                 >
                   {{ pNum + 1 }}
                 </button>
               }
-              <button class="csu-pagination-btn" [disabled]="page >= totalPages - 1" (click)="onPageChange(page + 1)">
+              <button class="csu-pagination-btn" [disabled]="page >= totalPages - 1" (click)="onPageChange(page + 1)" aria-label="Page suivante">
                 <i class="bi bi-chevron-right"></i>
               </button>
             </div>
           </div>
-        }
-      </div>
+        </div>
+      }
     </div>
   `
 })

@@ -4,12 +4,13 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
 import { PermissionService } from '../../core/services/permission.service';
 import { AuthService } from '../../core/services/auth.service';
 import { DemandePermission, StatutPermission } from '../../core/models/permission.model';
+import { CardListItemComponent } from '../../shared/ui';
 import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-permission',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, CardListItemComponent],
   template: `
     <div class="container-fluid animate-fade-in">
       <div class="csu-page-header">
@@ -46,7 +47,7 @@ import Swal from 'sweetalert2';
           @if (loading) {
             <div class="csu-loading"><div class="csu-spinner"></div></div>
           } @else if (demandes.length > 0) {
-            <div class="table-responsive">
+            <div class="table-responsive d-none d-lg-block">
               <table class="csu-table">
                 <thead>
                   <tr><th>Agent</th><th>Type</th><th>Période</th><th>Motif</th><th>Demandé le</th><th class="text-center">Statut</th><th class="text-center">Actions</th></tr>
@@ -74,6 +75,45 @@ import Swal from 'sweetalert2';
                   }
                 </tbody>
               </table>
+            </div>
+
+            <!-- Cartes résumé (mobile/tablette) -->
+            <div class="csu-list d-lg-none mb-0">
+              @for (d of demandes; track d.id) {
+                <csu-list-card>
+                  <div class="csu-list-card-head">
+                    <div class="csu-list-card-lead"><i class="bi bi-person"></i></div>
+                    <div class="csu-list-card-body">
+                      <div class="csu-list-card-title">{{ d.agentNom }}</div>
+                      <div class="csu-list-card-sub">{{ d.dateDebut | date:'dd/MM/yy' }} → {{ d.dateFin | date:'dd/MM/yy' }}</div>
+                    </div>
+                    <span class="statut-pill" [ngClass]="'st-' + d.statut.toLowerCase()">{{ statutLabel(d.statut) }}</span>
+                  </div>
+
+                  <div class="csu-list-card-meta">
+                    <span class="type-tag">{{ typeLabel(d.type) }}</span>
+                    <div class="meta"><span class="meta-label">Demandé le</span><span class="meta-value">{{ d.dateDemande }}</span></div>
+                  </div>
+                  @if (d.motif) {
+                    <p class="text-truncate-2" style="font-size:0.82rem;color:var(--csu-text-secondary);margin:0.6rem 0 0;">{{ d.motif }}</p>
+                  }
+
+                  @if (d.statut === 'EN_ATTENTE') {
+                    <div class="csu-list-card-actions">
+                      <button class="csu-btn csu-btn-light text-success" (click)="approuver(d)">
+                        <i class="bi bi-check-lg"></i> Approuver
+                      </button>
+                      <button class="csu-btn csu-btn-light text-csu-danger" (click)="refuser(d)">
+                        <i class="bi bi-x-lg"></i> Refuser
+                      </button>
+                    </div>
+                  } @else {
+                    <div class="csu-list-card-actions">
+                      <span class="text-muted small" style="padding:0.5rem 0;">Traitée par {{ d.traiteeParNom || '—' }}</span>
+                    </div>
+                  }
+                </csu-list-card>
+              }
             </div>
           } @else {
             <div class="csu-empty-state">

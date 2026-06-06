@@ -5,13 +5,14 @@ import { Activite, TypeActivite, ActiviteStats, StatutActivite } from '../../../
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { FilterBarComponent, FilterGroup, FilterValues } from '../../../shared/components/filter-bar/filter-bar.component';
+import { CardListItemComponent } from '../../../shared/ui';
 import Swal from 'sweetalert2';
 
 
 @Component({
   selector: 'app-activite-list',
   standalone: true,
-  imports: [CommonModule, RouterLink, FilterBarComponent],
+  imports: [CommonModule, RouterLink, FilterBarComponent, CardListItemComponent],
   template: `
     <div class="container-fluid animate-fade-in">
       <!-- Header -->
@@ -23,7 +24,7 @@ import Swal from 'sweetalert2';
           </h1>
           <p class="csu-page-subtitle">Rapportez et suivez les activités de sensibilisation, réunions et formations</p>
         </div>
-        <div class="d-flex gap-2">
+        <div class="csu-page-actions">
           <a routerLink="/activites/agenda" class="csu-btn csu-btn-light">
             <i class="bi bi-calendar3"></i> Agenda
           </a>
@@ -62,13 +63,13 @@ import Swal from 'sweetalert2';
         (filterChange)="onFilterChange($event)"
       ></app-filter-bar>
 
-      <!-- Table -->
-      <div class="csu-table-wrapper">
-        @if (loading) {
-          <div class="csu-loading">
-            <div class="csu-spinner"></div>
-          </div>
-        } @else if (activites.length === 0) {
+      <!-- États : chargement / vide -->
+      @if (loading) {
+        <div class="csu-table-wrapper">
+          <div class="csu-loading"><div class="csu-spinner"></div></div>
+        </div>
+      } @else if (activites.length === 0) {
+        <div class="csu-table-wrapper">
           <div class="csu-empty-state">
             <i class="bi bi-calendar-event"></i>
             <h3>Aucune activité enregistrée</h3>
@@ -77,7 +78,10 @@ import Swal from 'sweetalert2';
               Rapporter une activité
             </a>
           </div>
-        } @else {
+        </div>
+      } @else {
+        <!-- ===== Tableau (desktop ≥ lg) ===== -->
+        <div class="csu-table-wrapper d-none d-lg-block">
           <table class="csu-table">
             <thead>
               <tr>
@@ -142,32 +146,76 @@ import Swal from 'sweetalert2';
               }
             </tbody>
           </table>
+        </div>
 
-          <!-- Pagination -->
+        <!-- ===== Cartes résumé (mobile/tablette < lg) ===== -->
+        <div class="csu-list d-lg-none">
+          @for (act of activites; track act.id) {
+            <csu-list-card>
+              <div class="csu-list-card-head">
+                <div class="csu-list-card-lead accent"><i class="bi bi-calendar2-event"></i></div>
+                <div class="csu-list-card-body">
+                  <div class="csu-list-card-title">{{ getTypeLabel(act.typeActivite) }}</div>
+                  <div class="csu-list-card-sub">{{ act.dateActivite | date:'dd/MM/yyyy' }} · {{ act.categorieNom || '—' }}</div>
+                </div>
+                <span class="statut-pill"
+                  [class.st-plan]="(act.statut || 'REALISEE') === 'PLANIFIEE'"
+                  [class.st-done]="(act.statut || 'REALISEE') === 'REALISEE'"
+                  [class.st-cancel]="act.statut === 'ANNULEE'">
+                  {{ getStatutLabel(act.statut) }}
+                </span>
+              </div>
+
+              @if (act.description) {
+                <p class="text-truncate-2" style="font-size:0.82rem;color:var(--csu-text-secondary);margin:0.6rem 0 0;">{{ act.description }}</p>
+              }
+
+              <div class="csu-list-card-meta">
+                <div class="meta"><span class="meta-label">Participants</span><span class="meta-value">{{ act.nombreParticipants }}</span></div>
+                <div class="meta"><span class="meta-label">Bureau</span><span class="meta-value">{{ act.bureauCsuNom || '-' }}</span></div>
+                <div class="meta"><span class="meta-label">Rapporteur</span><span class="meta-value">{{ act.agentNom || '-' }}</span></div>
+              </div>
+
+              @if (canModify(act)) {
+                <div class="csu-list-card-actions">
+                  <a [routerLink]="['/activites', act.id, 'modifier']" class="csu-btn csu-btn-light">
+                    <i class="bi bi-pencil"></i> Modifier
+                  </a>
+                  <button (click)="onDelete(act)" class="csu-btn csu-btn-light text-csu-danger" aria-label="Supprimer">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </div>
+              }
+            </csu-list-card>
+          }
+        </div>
+
+        <!-- ===== Pagination (partagée) ===== -->
+        <div class="csu-pagination-card">
           <div class="csu-pagination">
             <div class="csu-pagination-info">
               Affichage de {{ page * size + 1 }} à {{ Math.min((page + 1) * size, totalElements) }} sur {{ totalElements }} activités
             </div>
             <div class="csu-pagination-controls">
-              <button class="csu-pagination-btn" [disabled]="page === 0" (click)="onPageChange(page - 1)">
+              <button class="csu-pagination-btn" [disabled]="page === 0" (click)="onPageChange(page - 1)" aria-label="Page précédente">
                 <i class="bi bi-chevron-left"></i>
               </button>
               @for (pNum of getPagesArray(); track pNum) {
-                <button 
-                  class="csu-pagination-btn" 
-                  [class.active]="pNum === page" 
+                <button
+                  class="csu-pagination-btn"
+                  [class.active]="pNum === page"
                   (click)="onPageChange(pNum)"
                 >
                   {{ pNum + 1 }}
                 </button>
               }
-              <button class="csu-pagination-btn" [disabled]="page >= totalPages - 1" (click)="onPageChange(page + 1)">
+              <button class="csu-pagination-btn" [disabled]="page >= totalPages - 1" (click)="onPageChange(page + 1)" aria-label="Page suivante">
                 <i class="bi bi-chevron-right"></i>
               </button>
             </div>
           </div>
-        }
-      </div>
+        </div>
+      }
     </div>
   `,
   styles: [`

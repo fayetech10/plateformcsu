@@ -4,12 +4,13 @@ import { ActiviteService } from '../../../core/services/activite.service';
 import { ConstatService } from '../../../core/services/constat.service';
 import { CategorieActivite } from '../../../core/models/activite.model';
 import { CategorieConstat } from '../../../core/models/constat.model';
+import { CardListItemComponent } from '../../../shared/ui';
 import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-categories',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, CardListItemComponent],
   template: `
     <div class="container-fluid animate-fade-in">
       <!-- Header -->
@@ -47,7 +48,7 @@ import Swal from 'sweetalert2';
                 <h3>Aucune catégorie d'activité</h3>
               </div>
             } @else {
-              <table class="csu-table">
+              <table class="csu-table d-none d-lg-table">
                 <thead>
                   <tr>
                     <th>Nom</th>
@@ -75,6 +76,28 @@ import Swal from 'sweetalert2';
                   }
                 </tbody>
               </table>
+
+              <!-- Cartes (mobile/tablette) -->
+              <div class="csu-list d-lg-none mb-0">
+                @for (c of activiteCategories; track c.id) {
+                  <csu-list-card>
+                    <div class="csu-list-card-head">
+                      <div class="csu-list-card-body">
+                        <div class="csu-list-card-title">{{ c.nom }}</div>
+                        @if (c.description) { <div class="csu-list-card-sub">{{ c.description }}</div> }
+                      </div>
+                      <span class="csu-badge" [class.csu-badge-success]="c.actif" [class.csu-badge-danger]="!c.actif">
+                        {{ c.actif ? 'Actif' : 'Inactif' }}
+                      </span>
+                    </div>
+                    <div class="csu-list-card-actions">
+                      <button class="csu-btn csu-btn-light" (click)="editActiviteCategory(c)">
+                        <i class="bi bi-pencil"></i> Modifier
+                      </button>
+                    </div>
+                  </csu-list-card>
+                }
+              </div>
             }
           </div>
         </div>
@@ -102,7 +125,7 @@ import Swal from 'sweetalert2';
                 <h3>Aucune catégorie d'incident</h3>
               </div>
             } @else {
-              <table class="csu-table">
+              <table class="csu-table d-none d-lg-table">
                 <thead>
                   <tr>
                     <th>Nom</th>
@@ -130,6 +153,28 @@ import Swal from 'sweetalert2';
                   }
                 </tbody>
               </table>
+
+              <!-- Cartes (mobile/tablette) -->
+              <div class="csu-list d-lg-none mb-0">
+                @for (c of constatCategories; track c.id) {
+                  <csu-list-card>
+                    <div class="csu-list-card-head">
+                      <div class="csu-list-card-body">
+                        <div class="csu-list-card-title">{{ c.nom }}</div>
+                        @if (c.description) { <div class="csu-list-card-sub">{{ c.description }}</div> }
+                      </div>
+                      <span class="csu-badge" [class.csu-badge-success]="c.actif" [class.csu-badge-danger]="!c.actif">
+                        {{ c.actif ? 'Actif' : 'Inactif' }}
+                      </span>
+                    </div>
+                    <div class="csu-list-card-actions">
+                      <button class="csu-btn csu-btn-light" (click)="editConstatCategory(c)">
+                        <i class="bi bi-pencil"></i> Modifier
+                      </button>
+                    </div>
+                  </csu-list-card>
+                }
+              </div>
             }
           </div>
         </div>

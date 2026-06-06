@@ -5,13 +5,14 @@ import { Patient } from '../../../core/models/patient.model';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { FilterBarComponent, FilterGroup, FilterValues } from '../../../shared/components/filter-bar/filter-bar.component';
+import { CardListItemComponent } from '../../../shared/ui';
 import Swal from 'sweetalert2';
 
 
 @Component({
   selector: 'app-patient-list',
   standalone: true,
-  imports: [CommonModule, RouterLink, FilterBarComponent],
+  imports: [CommonModule, RouterLink, FilterBarComponent, CardListItemComponent],
   template: `
     <div class="container-fluid animate-fade-in">
       <!-- Header -->
@@ -23,7 +24,7 @@ import Swal from 'sweetalert2';
           </h1>
           <p class="csu-page-subtitle">Enregistrez et gérez les dossiers de patients pour la CSU</p>
         </div>
-        <div class="d-flex gap-2 flex-wrap">
+        <div class="csu-page-actions">
           <button class="csu-btn csu-btn-light" (click)="exportPdf()" [disabled]="exporting">
             <i class="bi bi-file-earmark-pdf"></i> PDF
           </button>
@@ -43,13 +44,13 @@ import Swal from 'sweetalert2';
         (filterChange)="onFilterChange($event)"
       ></app-filter-bar>
 
-      <!-- Table -->
-      <div class="csu-table-wrapper">
-        @if (loading) {
-          <div class="csu-loading">
-            <div class="csu-spinner"></div>
-          </div>
-        } @else if (patients.length === 0) {
+      <!-- États : chargement / vide -->
+      @if (loading) {
+        <div class="csu-table-wrapper">
+          <div class="csu-loading"><div class="csu-spinner"></div></div>
+        </div>
+      } @else if (patients.length === 0) {
+        <div class="csu-table-wrapper">
           <div class="csu-empty-state">
             <i class="bi bi-people"></i>
             <h3>Aucun patient trouvé</h3>
@@ -58,7 +59,10 @@ import Swal from 'sweetalert2';
               Enregistrer un patient
             </a>
           </div>
-        } @else {
+        </div>
+      } @else {
+        <!-- ===== Tableau (desktop ≥ lg) ===== -->
+        <div class="csu-table-wrapper d-none d-lg-block">
           <table class="csu-table">
             <thead>
               <tr>
@@ -106,38 +110,79 @@ import Swal from 'sweetalert2';
                         </button>
                       }
                     </div>
-
                   </td>
                 </tr>
               }
             </tbody>
           </table>
+        </div>
 
-          <!-- Pagination -->
+        <!-- ===== Cartes résumé (mobile/tablette < lg) ===== -->
+        <div class="csu-list d-lg-none">
+          @for (p of patients; track p.id) {
+            <csu-list-card>
+              <div class="csu-list-card-head">
+                <div class="csu-list-card-lead">{{ p.prenom?.charAt(0) }}{{ p.nom?.charAt(0) }}</div>
+                <div class="csu-list-card-body">
+                  <div class="csu-list-card-title">{{ p.prenom }} {{ p.nom }}</div>
+                  <div class="csu-list-card-sub">N° {{ p.numeroDossier }} · {{ p.region }}</div>
+                </div>
+              </div>
+
+              <div class="csu-list-card-meta">
+                <span class="csu-badge" [ngClass]="getCategoryBadgeClass(p)">{{ getCategoryLabel(p) }}</span>
+                <span class="csu-badge" [class.csu-badge-info]="p.sexe === 'M'" [class.csu-badge-danger]="p.sexe === 'F'">
+                  {{ p.sexe === 'M' ? 'Masculin' : 'Féminin' }}
+                </span>
+                <span class="csu-badge csu-badge-secondary">{{ calculateAge(p.dateNaissance) }} ans</span>
+                @if (p.telephone) {
+                  <span class="csu-badge csu-badge-primary"><i class="bi bi-telephone"></i> {{ p.telephone }}</span>
+                }
+              </div>
+
+              <div class="csu-list-card-actions">
+                <a [routerLink]="['/patients', p.id]" class="csu-btn csu-btn-light">
+                  <i class="bi bi-eye"></i> Détail
+                </a>
+                @if (canModify(p)) {
+                  <a [routerLink]="['/patients', p.id, 'modifier']" class="csu-btn csu-btn-light" aria-label="Modifier">
+                    <i class="bi bi-pencil"></i>
+                  </a>
+                  <button (click)="onDelete(p)" class="csu-btn csu-btn-light text-csu-danger" aria-label="Supprimer">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                }
+              </div>
+            </csu-list-card>
+          }
+        </div>
+
+        <!-- ===== Pagination (partagée) ===== -->
+        <div class="csu-pagination-card">
           <div class="csu-pagination">
             <div class="csu-pagination-info">
               Affichage de {{ page * size + 1 }} à {{ Math.min((page + 1) * size, totalElements) }} sur {{ totalElements }} patients
             </div>
             <div class="csu-pagination-controls">
-              <button class="csu-pagination-btn" [disabled]="page === 0" (click)="onPageChange(page - 1)">
+              <button class="csu-pagination-btn" [disabled]="page === 0" (click)="onPageChange(page - 1)" aria-label="Page précédente">
                 <i class="bi bi-chevron-left"></i>
               </button>
               @for (pNum of getPagesArray(); track pNum) {
-                <button 
-                  class="csu-pagination-btn" 
-                  [class.active]="pNum === page" 
+                <button
+                  class="csu-pagination-btn"
+                  [class.active]="pNum === page"
                   (click)="onPageChange(pNum)"
                 >
                   {{ pNum + 1 }}
                 </button>
               }
-              <button class="csu-pagination-btn" [disabled]="page >= totalPages - 1" (click)="onPageChange(page + 1)">
+              <button class="csu-pagination-btn" [disabled]="page >= totalPages - 1" (click)="onPageChange(page + 1)" aria-label="Page suivante">
                 <i class="bi bi-chevron-right"></i>
               </button>
             </div>
           </div>
-        }
-      </div>
+        </div>
+      }
     </div>
   `
 })

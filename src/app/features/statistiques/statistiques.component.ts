@@ -311,6 +311,37 @@ type Onglet = 'agents' | 'patients' | 'geo' | 'bureaux' | 'carte' | 'systeme';
 
     .spin { display: inline-block; animation: spin 0.8s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Mobile ── */
+    @media (max-width: 576px) {
+      /* Onglets en grille de "chips" : les 6 onglets (dont Bureaux, Carte,
+         Système) restent tous visibles et accessibles, sans scroll caché */
+      .stat-tabs {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.4rem;
+        border-bottom: none;
+        padding-bottom: 0;
+      }
+      .stat-tab {
+        justify-content: center;
+        text-align: center;
+        border: 1px solid var(--csu-border-light);
+        border-radius: 10px;
+        border-bottom: 1px solid var(--csu-border-light);
+        padding: 0.6rem 0.5rem;
+        font-size: 0.8rem;
+        min-height: 44px;
+      }
+      .stat-tab.active {
+        border-color: var(--csu-primary);
+        background: var(--csu-primary-light, rgba(16,185,129,0.08));
+      }
+      /* Libellés de barres plus courts pour laisser de la place à la jauge */
+      .bar-name, .role-name { width: 92px; font-size: 0.78rem; }
+      .stat-kpi { min-width: 120px; }
+      .stat-kpi .num { font-size: 1.35rem; }
+    }
   `]
 })
 export class StatistiquesComponent implements OnInit, OnDestroy {

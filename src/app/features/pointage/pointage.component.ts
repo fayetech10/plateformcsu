@@ -4,12 +4,13 @@ import { FormsModule } from '@angular/forms';
 import { PointageService } from '../../core/services/pointage.service';
 import { AuthService } from '../../core/services/auth.service';
 import { PointageStatutJour, PointageLigne, PointagesJour } from '../../core/models/pointage.model';
+import { CardListItemComponent } from '../../shared/ui';
 import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-pointage',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, CardListItemComponent],
   template: `
     <div class="container-fluid animate-fade-in">
       <div class="csu-page-header">
@@ -42,7 +43,7 @@ import Swal from 'sweetalert2';
             </div>
 
             @if (presence.pointages.length > 0) {
-              <div class="table-responsive">
+              <div class="table-responsive d-none d-lg-block">
                 <table class="csu-table">
                   <thead><tr><th>Agent</th><th class="text-center">Arrivée</th><th class="text-center">Départ</th><th class="text-center">Statut</th><th class="text-center">Localisation</th></tr></thead>
                   <tbody>
@@ -68,6 +69,34 @@ import Swal from 'sweetalert2';
                     }
                   </tbody>
                 </table>
+              </div>
+
+              <!-- Cartes résumé (mobile/tablette) -->
+              <div class="csu-list d-lg-none mb-0">
+                @for (p of presence.pointages; track p.id) {
+                  <csu-list-card>
+                    <div class="csu-list-card-head">
+                      <div class="csu-list-card-lead"><i class="bi bi-person"></i></div>
+                      <div class="csu-list-card-body">
+                        <div class="csu-list-card-title">{{ p.agentNom }}</div>
+                        <div class="csu-list-card-sub">
+                          <i class="bi bi-box-arrow-in-right text-success"></i> {{ p.heureArrivee || '—' }}
+                          · <i class="bi bi-box-arrow-right text-warning"></i> {{ p.heureDepart || '—' }}
+                        </div>
+                      </div>
+                      <span class="tag" [class.en-service]="p.statut === 'EN_SERVICE'">{{ p.statut === 'EN_SERVICE' ? 'En service' : 'Parti' }}</span>
+                    </div>
+                    <div class="csu-list-card-meta">
+                      @if (p.horsZone === true) {
+                        <span class="geo-badge ko"><i class="bi bi-geo-alt-fill"></i> Hors zone ({{ p.distanceMetres }} m)</span>
+                      } @else if (p.positionVerifiee === false) {
+                        <span class="geo-badge unknown"><i class="bi bi-question-circle"></i> Position non vérifiée</span>
+                      } @else if (p.horsZone === false) {
+                        <span class="geo-badge ok"><i class="bi bi-check-circle"></i> Sur site</span>
+                      }
+                    </div>
+                  </csu-list-card>
+                }
               </div>
             } @else {
               <div class="csu-empty-state"><i class="bi bi-person-x"></i><h3>Aucun pointage</h3><p>Aucun agent ne s'est pointé pour cette date.</p></div>
@@ -126,7 +155,7 @@ import Swal from 'sweetalert2';
             @if (loadingHistory) {
               <div class="csu-loading"><div class="csu-spinner"></div></div>
             } @else if (history.length > 0) {
-              <div class="table-responsive">
+              <div class="table-responsive d-none d-lg-block">
                 <table class="csu-table">
                   <thead><tr><th>Date</th><th>Arrivée</th><th>Départ</th><th class="text-center">Statut</th></tr></thead>
                   <tbody>
@@ -144,6 +173,26 @@ import Swal from 'sweetalert2';
                     }
                   </tbody>
                 </table>
+              </div>
+
+              <!-- Cartes résumé (mobile/tablette) -->
+              <div class="csu-list d-lg-none mb-0">
+                @for (h of history; track h.id) {
+                  <csu-list-card>
+                    <div class="csu-list-card-head">
+                      <div class="csu-list-card-body">
+                        <div class="csu-list-card-title">{{ h.date | date:'EEE d MMM y' }}</div>
+                        <div class="csu-list-card-sub">
+                          <i class="bi bi-box-arrow-in-right text-success"></i> {{ h.heureArrivee || '—' }}
+                          · <i class="bi bi-box-arrow-right text-warning"></i> {{ h.heureDepart || '—' }}
+                        </div>
+                      </div>
+                      <span class="tag" [class.en-service]="h.statut === 'EN_SERVICE'">
+                        {{ h.statut === 'EN_SERVICE' ? 'En service' : 'Parti' }}
+                      </span>
+                    </div>
+                  </csu-list-card>
+                }
               </div>
             } @else {
               <div class="csu-empty-state"><i class="bi bi-clock-history"></i><h3>Aucun pointage</h3><p>Vos pointages apparaîtront ici.</p></div>

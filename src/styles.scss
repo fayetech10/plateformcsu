@@ -1468,3 +1468,192 @@ i.bi {
   overflow: hidden;
 }
 
+/* ==============================================
+   Refonte Mobile — Liste en cartes résumé
+   (palette inchangée, variables --csu-* réutilisées)
+   ============================================== */
+
+/* Conteneur de la liste de cartes (mobile) */
+.csu-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  margin-bottom: 1.1rem;
+}
+
+/* Carte résumé : une ligne de tableau condensée pour le mobile */
+.csu-list-card {
+  background: #fff;
+  border: 1px solid rgba(226, 232, 240, 0.75);
+  border-radius: var(--csu-radius-lg);
+  padding: 0.85rem 0.9rem;
+  box-shadow: var(--csu-shadow-xs);
+  transition: var(--csu-transition-fast);
+  animation: fadeIn 0.3s ease-out;
+}
+.csu-list-card:active { transform: scale(0.992); }
+
+/* En-tête de carte : pastille + titre/sous-titre */
+.csu-list-card-head {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+/* Pastille colorée (initiales ou icône) */
+.csu-list-card-lead {
+  width: 42px; height: 42px;
+  border-radius: var(--csu-radius);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 800; font-size: 0.9rem;
+  background: var(--csu-primary-light);
+  color: var(--csu-primary-dark);
+  flex-shrink: 0;
+}
+.csu-list-card-lead.secondary { background: var(--csu-secondary-light); color: var(--csu-secondary-dark); }
+.csu-list-card-lead.accent    { background: var(--csu-accent-light);    color: #b45309; }
+.csu-list-card-lead.danger    { background: rgba(239,68,68,0.1);        color: #b91c1c; }
+.csu-list-card-lead.info      { background: rgba(14,165,233,0.1);       color: #0369a1; }
+
+/* min-width:0 indispensable pour que l'ellipsis fonctionne dans un flex */
+.csu-list-card-body { flex: 1; min-width: 0; }
+
+.csu-list-card-title {
+  font-size: 0.95rem; font-weight: 700; color: var(--csu-text);
+  line-height: 1.25;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.csu-list-card-sub {
+  font-size: 0.8rem; color: var(--csu-text-muted); font-weight: 500;
+  margin-top: 1px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* Ligne de méta : couples libellé/valeur + badges */
+.csu-list-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.9rem;
+  margin-top: 0.7rem;
+}
+.csu-list-card-meta .meta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.csu-list-card-meta .meta-label {
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--csu-text-muted);
+  line-height: 1.4;
+}
+.csu-list-card-meta .meta-value {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--csu-text-secondary);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* Pied de carte : actions visibles, réparties, ≥44px (accessibilité tactile) */
+.csu-list-card-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.8rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--csu-border-light);
+}
+.csu-list-card-actions .csu-btn-icon,
+.csu-list-card-actions .csu-btn {
+  flex: 1;
+  height: 44px;
+  min-height: 44px;
+}
+.csu-list-card-actions .csu-btn { font-size: 0.82rem; }
+
+/* Conteneur de pagination autonome (cartes mobile) */
+.csu-pagination-card {
+  background: #fff;
+  border: 1px solid rgba(226, 232, 240, 0.7);
+  border-radius: var(--csu-radius-lg);
+  box-shadow: var(--csu-shadow-sm);
+  margin-bottom: 1.25rem;
+  overflow: hidden;
+}
+.csu-pagination-card .csu-pagination { border-top: none; }
+
+/* Barre d'actions d'en-tête : rangée scrollable propre sur mobile */
+.csu-page-actions {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+/* ==============================================
+   Refonte Mobile — Ajustements transverses
+   ============================================== */
+@media (max-width: 992px) {
+  /* Cibles tactiles conformes (min 44px recommandé) */
+  .csu-btn { min-height: 44px; }
+  .csu-btn-sm { min-height: 38px; }
+  .csu-btn-icon { width: 40px; height: 40px; }
+
+  /* En-tête : actions en rangée scrollable horizontale (pas de wrap désordonné) */
+  .csu-page-actions {
+    flex-wrap: nowrap;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 2px;
+  }
+  .csu-page-actions::-webkit-scrollbar { display: none; }
+  .csu-page-actions .csu-btn { flex: 0 0 auto; white-space: nowrap; }
+}
+
+@media (max-width: 576px) {
+  /* Anti-zoom iOS : les champs doivent faire ≥16px */
+  .csu-form-control,
+  .csu-form-select,
+  .csu-search-input input {
+    font-size: 16px;
+  }
+
+  /* Pagination compacte : Préc / page active / Suiv */
+  .csu-pagination {
+    flex-direction: column;
+    gap: 0.6rem;
+    align-items: stretch;
+    text-align: center;
+  }
+  .csu-pagination-controls { justify-content: center; }
+  /* On masque les numéros non actifs ; on garde les flèches (1er/dernier) */
+  .csu-pagination-btn:not(.active):not(:first-child):not(:last-child) { display: none; }
+
+  /* Barre de recherche : pleine largeur */
+  .csu-search-input { min-width: 100%; }
+
+  /* Pied d'actions des formulaires : boutons pleine largeur, action principale en haut */
+  form .d-flex.justify-content-end.border-top {
+    flex-direction: column-reverse;
+    gap: 0.6rem !important;
+  }
+  form .d-flex.justify-content-end.border-top > .csu-btn,
+  form .d-flex.justify-content-end.border-top > button,
+  form .d-flex.justify-content-end.border-top > a {
+    width: 100%;
+  }
+}
+
+/* Respect des préférences système de réduction de mouvement */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+

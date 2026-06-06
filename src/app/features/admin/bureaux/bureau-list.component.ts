@@ -4,12 +4,13 @@ import { BureauService } from '../../../core/services/bureau.service';
 import { BureauCsu } from '../../../core/models/bureau.model';
 import { RouterLink } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { CardListItemComponent } from '../../../shared/ui';
 import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-bureau-list',
   standalone: true,
-  imports: [CommonModule, RouterLink, ReactiveFormsModule],
+  imports: [CommonModule, RouterLink, ReactiveFormsModule, CardListItemComponent],
   template: `
     <div class="container-fluid animate-fade-in">
       <!-- Header -->
@@ -21,7 +22,7 @@ import Swal from 'sweetalert2';
           </h1>
           <p class="csu-page-subtitle">Configurez et supervisez les bureaux régionaux de Couverture Sanitaire Universelle</p>
         </div>
-        <div>
+        <div class="csu-page-actions">
           <a routerLink="/admin/bureaux/nouveau" class="csu-btn csu-btn-primary">
             <i class="bi bi-plus-lg"></i> Nouveau Bureau
           </a>
@@ -52,13 +53,13 @@ import Swal from 'sweetalert2';
         </form>
       </div>
 
-      <!-- Table -->
-      <div class="csu-table-wrapper">
-        @if (loading) {
-          <div class="csu-loading">
-            <div class="csu-spinner"></div>
-          </div>
-        } @else if (bureaux.length === 0) {
+      <!-- États : chargement / vide -->
+      @if (loading) {
+        <div class="csu-table-wrapper">
+          <div class="csu-loading"><div class="csu-spinner"></div></div>
+        </div>
+      } @else if (bureaux.length === 0) {
+        <div class="csu-table-wrapper">
           <div class="csu-empty-state">
             <i class="bi bi-building"></i>
             <h3>Aucun bureau CSU configuré</h3>
@@ -67,7 +68,10 @@ import Swal from 'sweetalert2';
               Créer un bureau
             </a>
           </div>
-        } @else {
+        </div>
+      } @else {
+        <!-- ===== Tableau (desktop ≥ lg) ===== -->
+        <div class="csu-table-wrapper d-none d-lg-block">
           <table class="csu-table">
             <thead>
               <tr>
@@ -113,32 +117,67 @@ import Swal from 'sweetalert2';
               }
             </tbody>
           </table>
+        </div>
 
-          <!-- Pagination -->
+        <!-- ===== Cartes résumé (mobile/tablette < lg) ===== -->
+        <div class="csu-list d-lg-none">
+          @for (b of bureaux; track b.id) {
+            <csu-list-card>
+              <div class="csu-list-card-head">
+                <div class="csu-list-card-lead"><i class="bi bi-building"></i></div>
+                <div class="csu-list-card-body">
+                  <div class="csu-list-card-title">{{ b.nom }}</div>
+                  <div class="csu-list-card-sub">{{ b.code }} · {{ b.region }}</div>
+                </div>
+                <span class="csu-badge" [class.csu-badge-success]="b.actif" [class.csu-badge-danger]="!b.actif">
+                  {{ b.actif ? 'Actif' : 'Inactif' }}
+                </span>
+              </div>
+
+              <div class="csu-list-card-meta">
+                <div class="meta"><span class="meta-label">Département</span><span class="meta-value">{{ b.departement }}</span></div>
+                <div class="meta"><span class="meta-label">Commune</span><span class="meta-value">{{ b.commune }}</span></div>
+                <div class="meta"><span class="meta-label">Téléphone</span><span class="meta-value">{{ b.telephone || '-' }}</span></div>
+              </div>
+
+              <div class="csu-list-card-actions">
+                <a [routerLink]="['/admin/bureaux', b.id, 'modifier']" class="csu-btn csu-btn-light">
+                  <i class="bi bi-pencil"></i> Modifier
+                </a>
+                <button (click)="onDelete(b)" class="csu-btn csu-btn-light text-csu-danger" aria-label="Supprimer">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+            </csu-list-card>
+          }
+        </div>
+
+        <!-- ===== Pagination (partagée) ===== -->
+        <div class="csu-pagination-card">
           <div class="csu-pagination">
             <div class="csu-pagination-info">
               Affichage de {{ page * size + 1 }} à {{ Math.min((page + 1) * size, totalElements) }} sur {{ totalElements }} bureaux
             </div>
             <div class="csu-pagination-controls">
-              <button class="csu-pagination-btn" [disabled]="page === 0" (click)="onPageChange(page - 1)">
+              <button class="csu-pagination-btn" [disabled]="page === 0" (click)="onPageChange(page - 1)" aria-label="Page précédente">
                 <i class="bi bi-chevron-left"></i>
               </button>
               @for (pNum of getPagesArray(); track pNum) {
-                <button 
-                  class="csu-pagination-btn" 
-                  [class.active]="pNum === page" 
+                <button
+                  class="csu-pagination-btn"
+                  [class.active]="pNum === page"
                   (click)="onPageChange(pNum)"
                 >
                   {{ pNum + 1 }}
                 </button>
               }
-              <button class="csu-pagination-btn" [disabled]="page >= totalPages - 1" (click)="onPageChange(page + 1)">
+              <button class="csu-pagination-btn" [disabled]="page >= totalPages - 1" (click)="onPageChange(page + 1)" aria-label="Page suivante">
                 <i class="bi bi-chevron-right"></i>
               </button>
             </div>
           </div>
-        }
-      </div>
+        </div>
+      }
     </div>
   `
 })

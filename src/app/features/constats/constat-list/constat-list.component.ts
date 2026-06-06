@@ -5,12 +5,13 @@ import { AuthService } from '../../../core/services/auth.service';
 import { Constat, StatutConstat, PrioriteConstat } from '../../../core/models/constat.model';
 import { RouterLink } from '@angular/router';
 import { FilterBarComponent, FilterGroup, FilterValues } from '../../../shared/components/filter-bar/filter-bar.component';
+import { CardListItemComponent } from '../../../shared/ui';
 import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-constat-list',
   standalone: true,
-  imports: [CommonModule, RouterLink, FilterBarComponent],
+  imports: [CommonModule, RouterLink, FilterBarComponent, CardListItemComponent],
   template: `
     <div class="container-fluid animate-fade-in">
       <!-- Header -->
@@ -22,7 +23,7 @@ import Swal from 'sweetalert2';
           </h1>
           <p class="csu-page-subtitle">Rapportez et suivez la résolution des incidents opérationnels et anomalies</p>
         </div>
-        <div>
+        <div class="csu-page-actions">
           <a routerLink="/constats/nouveau" class="csu-btn csu-btn-primary">
             <i class="bi bi-plus-lg"></i> Signaler un Constat
           </a>
@@ -36,13 +37,13 @@ import Swal from 'sweetalert2';
         (filterChange)="onFilterChange($event)"
       ></app-filter-bar>
 
-      <!-- Table -->
-      <div class="csu-table-wrapper">
-        @if (loading) {
-          <div class="csu-loading">
-            <div class="csu-spinner"></div>
-          </div>
-        } @else if (constats.length === 0) {
+      <!-- États : chargement / vide -->
+      @if (loading) {
+        <div class="csu-table-wrapper">
+          <div class="csu-loading"><div class="csu-spinner"></div></div>
+        </div>
+      } @else if (constats.length === 0) {
+        <div class="csu-table-wrapper">
           <div class="csu-empty-state">
             <i class="bi bi-clipboard-check"></i>
             <h3>Aucun constat signalé</h3>
@@ -51,7 +52,10 @@ import Swal from 'sweetalert2';
               Signaler un incident
             </a>
           </div>
-        } @else {
+        </div>
+      } @else {
+        <!-- ===== Tableau (desktop ≥ lg) ===== -->
+        <div class="csu-table-wrapper d-none d-lg-block">
           <table class="csu-table">
             <thead>
               <tr>
@@ -115,32 +119,86 @@ import Swal from 'sweetalert2';
               }
             </tbody>
           </table>
+        </div>
 
-          <!-- Pagination -->
+        <!-- ===== Cartes résumé (mobile/tablette < lg) ===== -->
+        <div class="csu-list d-lg-none">
+          @for (c of constats; track c.id) {
+            <csu-list-card>
+              <div class="csu-list-card-head">
+                <div class="csu-list-card-lead accent"><i class="bi bi-clipboard-x"></i></div>
+                <div class="csu-list-card-body">
+                  <div class="csu-list-card-title">{{ c.referenceConstat }}</div>
+                  <div class="csu-list-card-sub">{{ c.dateConstat | date:'dd/MM/yyyy' }} · {{ c.categorieNom || '—' }}</div>
+                </div>
+              </div>
+
+              <p class="text-truncate-2" style="font-size:0.82rem;color:var(--csu-text-secondary);margin:0.6rem 0 0;">{{ c.description }}</p>
+
+              <div class="csu-list-card-meta">
+                <span class="csu-badge"
+                  [class.csu-badge-secondary]="c.priorite === 'BASSE'"
+                  [class.csu-badge-info]="c.priorite === 'MOYENNE'"
+                  [class.csu-badge-warning]="c.priorite === 'HAUTE'"
+                  [class.csu-badge-danger]="c.priorite === 'URGENTE'">
+                  {{ getPrioriteLabel(c.priorite) }}
+                </span>
+                <span class="csu-badge"
+                  [class.csu-badge-primary]="c.statut === 'OUVERT'"
+                  [class.csu-badge-warning]="c.statut === 'EN_COURS'"
+                  [class.csu-badge-success]="c.statut === 'RESOLU'"
+                  [class.csu-badge-secondary]="c.statut === 'ARCHIVE'">
+                  {{ getStatutLabel(c.statut) }}
+                </span>
+                <span class="csu-badge csu-badge-info"><i class="bi bi-person"></i> {{ c.responsableNom || 'Non assigné' }}</span>
+              </div>
+
+              <div class="csu-list-card-actions">
+                @if (canModify(c)) {
+                  <a [routerLink]="['/constats', c.id, 'modifier']" class="csu-btn csu-btn-light">
+                    <i class="bi bi-pencil"></i> Modifier
+                  </a>
+                  @if (!c.archive) {
+                    <button (click)="onArchive(c)" class="csu-btn csu-btn-light text-csu-warning" aria-label="Archiver">
+                      <i class="bi bi-archive"></i>
+                    </button>
+                  }
+                } @else {
+                  <button class="csu-btn csu-btn-light" disabled>
+                    <i class="bi bi-eye"></i> Lecture seule
+                  </button>
+                }
+              </div>
+            </csu-list-card>
+          }
+        </div>
+
+        <!-- ===== Pagination (partagée) ===== -->
+        <div class="csu-pagination-card">
           <div class="csu-pagination">
             <div class="csu-pagination-info">
               Affichage de {{ page * size + 1 }} à {{ Math.min((page + 1) * size, totalElements) }} sur {{ totalElements }} constats
             </div>
             <div class="csu-pagination-controls">
-              <button class="csu-pagination-btn" [disabled]="page === 0" (click)="onPageChange(page - 1)">
+              <button class="csu-pagination-btn" [disabled]="page === 0" (click)="onPageChange(page - 1)" aria-label="Page précédente">
                 <i class="bi bi-chevron-left"></i>
               </button>
               @for (pNum of getPagesArray(); track pNum) {
-                <button 
-                  class="csu-pagination-btn" 
-                  [class.active]="pNum === page" 
+                <button
+                  class="csu-pagination-btn"
+                  [class.active]="pNum === page"
                   (click)="onPageChange(pNum)"
                 >
                   {{ pNum + 1 }}
                 </button>
               }
-              <button class="csu-pagination-btn" [disabled]="page >= totalPages - 1" (click)="onPageChange(page + 1)">
+              <button class="csu-pagination-btn" [disabled]="page >= totalPages - 1" (click)="onPageChange(page + 1)" aria-label="Page suivante">
                 <i class="bi bi-chevron-right"></i>
               </button>
             </div>
           </div>
-        }
-      </div>
+        </div>
+      }
     </div>
   `
 })

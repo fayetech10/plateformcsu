@@ -10,11 +10,12 @@ import { PointageService } from '../../../core/services/pointage.service';
 import { PointagesJour, PointageLigne } from '../../../core/models/pointage.model';
 import { PermissionService } from '../../../core/services/permission.service';
 import { DemandePermission } from '../../../core/models/permission.model';
+import { CardListItemComponent } from '../../../shared/ui';
 
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule],
+  imports: [CommonModule, RouterLink, FormsModule, CardListItemComponent],
   template: `
     <div class="container-fluid animate-fade-in">
       <!-- Header -->
@@ -26,7 +27,7 @@ import { DemandePermission } from '../../../core/models/permission.model';
           </h1>
           <p class="csu-page-subtitle">Supervision des utilisateurs, bureaux et de l'activité de la plateforme</p>
         </div>
-        <div class="d-flex gap-2">
+        <div class="csu-page-actions">
           <button (click)="reload()" class="csu-btn csu-btn-light" [disabled]="loading">
             <i class="bi bi-arrow-clockwise" [class.spin]="loading"></i>
             Actualiser
@@ -332,7 +333,7 @@ import { DemandePermission } from '../../../core/models/permission.model';
           </div>
 
           @if (demandes.length > 0) {
-            <div class="table-responsive">
+            <div class="table-responsive d-none d-lg-block">
               <table class="csu-table">
                 <thead>
                   <tr><th>Agent</th><th>Type</th><th>Période</th><th>Motif</th><th class="text-center">Statut</th><th class="text-center">Actions</th></tr>
@@ -360,6 +361,38 @@ import { DemandePermission } from '../../../core/models/permission.model';
                 </tbody>
               </table>
             </div>
+
+            <!-- Cartes résumé (mobile/tablette) -->
+            <div class="csu-list d-lg-none mb-0">
+              @for (d of demandes; track d.id) {
+                <csu-list-card>
+                  <div class="csu-list-card-head">
+                    <div class="csu-list-card-lead"><i class="bi bi-person"></i></div>
+                    <div class="csu-list-card-body">
+                      <div class="csu-list-card-title">{{ d.agentNom }}</div>
+                      <div class="csu-list-card-sub">{{ d.dateDebut | date:'dd/MM/yy' }} → {{ d.dateFin | date:'dd/MM/yy' }}</div>
+                    </div>
+                    <span class="statut-pill" [ngClass]="'st-' + d.statut.toLowerCase()">{{ statutPermLabel(d.statut) }}</span>
+                  </div>
+                  <div class="csu-list-card-meta">
+                    <span class="type-tag">{{ typePermLabel(d.type) }}</span>
+                  </div>
+                  @if (d.motif) {
+                    <p class="text-truncate-2" style="font-size:0.82rem;color:var(--csu-text-secondary);margin:0.6rem 0 0;">{{ d.motif }}</p>
+                  }
+                  @if (d.statut === 'EN_ATTENTE') {
+                    <div class="csu-list-card-actions">
+                      <button class="csu-btn csu-btn-light text-success" (click)="approuver(d)"><i class="bi bi-check-lg"></i> Approuver</button>
+                      <button class="csu-btn csu-btn-light text-csu-danger" (click)="refuser(d)"><i class="bi bi-x-lg"></i> Refuser</button>
+                    </div>
+                  } @else {
+                    <div class="csu-list-card-actions">
+                      <span class="text-muted small" style="padding:0.5rem 0;">Traitée par {{ d.traiteeParNom || '—' }}</span>
+                    </div>
+                  }
+                </csu-list-card>
+              }
+            </div>
           } @else {
             <div class="csu-empty-state"><i class="bi bi-calendar2-check"></i><h3>Aucune demande</h3><p>Aucune demande {{ filtreStatut === 'EN_ATTENTE' ? 'en attente' : '' }} pour le moment.</p></div>
           }
@@ -376,7 +409,7 @@ import { DemandePermission } from '../../../core/models/permission.model';
           </div>
           <p class="text-muted small mb-3"><i class="bi bi-info-circle"></i> Cliquez sur un bureau pour voir le détail complet (agents, patients, activités, enrôlements, constats).</p>
           @if (stats.bureauxStats.length > 0) {
-            <div class="table-responsive">
+            <div class="table-responsive d-none d-lg-block">
               <table class="csu-table">
                 <thead>
                   <tr>
@@ -426,6 +459,34 @@ import { DemandePermission } from '../../../core/models/permission.model';
                   }
                 </tbody>
               </table>
+            </div>
+
+            <!-- Cartes résumé (mobile/tablette) -->
+            <div class="csu-list d-lg-none mb-0">
+              @for (b of stats.bureauxStats; track b.id) {
+                <csu-list-card>
+                  <div class="csu-list-card-head">
+                    <div class="csu-list-card-lead"><i class="bi bi-building"></i></div>
+                    <div class="csu-list-card-body">
+                      <div class="csu-list-card-title">{{ b.nom }}</div>
+                      <div class="csu-list-card-sub">{{ b.type || 'Bureau CSU' }} · {{ b.region || '—' }}</div>
+                    </div>
+                    <span class="status-pill" [class.off]="!b.actif">{{ b.actif ? 'Actif' : 'Inactif' }}</span>
+                  </div>
+                  <div class="csu-list-card-meta">
+                    <div class="meta"><span class="meta-label">Agents</span><span class="meta-value">{{ b.agents }}</span></div>
+                    <div class="meta"><span class="meta-label">Patients</span><span class="meta-value">{{ b.patients }}</span></div>
+                    <div class="meta"><span class="meta-label">Enrôl.</span><span class="meta-value">{{ b.enrolements }}</span></div>
+                    <div class="meta"><span class="meta-label">Activités</span><span class="meta-value">{{ b.activites }}</span></div>
+                    <div class="meta"><span class="meta-label">Constats</span><span class="meta-value">{{ b.constats }}</span></div>
+                  </div>
+                  <div class="csu-list-card-actions">
+                    <a [routerLink]="['/admin/bureaux', b.id, 'details']" class="csu-btn csu-btn-light">
+                      <i class="bi bi-eye"></i> Voir le détail
+                    </a>
+                  </div>
+                </csu-list-card>
+              }
             </div>
           } @else {
             <div class="csu-empty-state"><i class="bi bi-building"></i><h3>Aucun bureau configuré</h3></div>

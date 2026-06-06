@@ -5,12 +5,13 @@ import { AuthService } from '../../../core/services/auth.service';
 import { Enrolement, StatutEnrolement } from '../../../core/models/enrolement.model';
 import { RouterLink } from '@angular/router';
 import { FilterBarComponent, FilterGroup, FilterValues } from '../../../shared/components/filter-bar/filter-bar.component';
+import { CardListItemComponent } from '../../../shared/ui';
 import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-enrolement-list',
   standalone: true,
-  imports: [CommonModule, RouterLink, FilterBarComponent],
+  imports: [CommonModule, RouterLink, FilterBarComponent, CardListItemComponent],
   template: `
     <div class="container-fluid animate-fade-in">
       <!-- Header -->
@@ -22,7 +23,7 @@ import Swal from 'sweetalert2';
           </h1>
           <p class="csu-page-subtitle">Suivi des affiliations des bénéficiaires à la Couverture Sanitaire Universelle</p>
         </div>
-        <div>
+        <div class="csu-page-actions">
           <a routerLink="/enrolements/nouveau" class="csu-btn csu-btn-primary">
             <i class="bi bi-plus-lg"></i> Enrôler un Patient
           </a>
@@ -36,13 +37,13 @@ import Swal from 'sweetalert2';
         (filterChange)="onFilterChange($event)"
       ></app-filter-bar>
 
-      <!-- Table -->
-      <div class="csu-table-wrapper">
-        @if (loading) {
-          <div class="csu-loading">
-            <div class="csu-spinner"></div>
-          </div>
-        } @else if (enrolements.length === 0) {
+      <!-- États : chargement / vide -->
+      @if (loading) {
+        <div class="csu-table-wrapper">
+          <div class="csu-loading"><div class="csu-spinner"></div></div>
+        </div>
+      } @else if (enrolements.length === 0) {
+        <div class="csu-table-wrapper">
           <div class="csu-empty-state">
             <i class="bi bi-shield-exclamation"></i>
             <h3>Aucun enrôlement trouvé</h3>
@@ -51,7 +52,10 @@ import Swal from 'sweetalert2';
               Nouvel Enrôlement
             </a>
           </div>
-        } @else {
+        </div>
+      } @else {
+        <!-- ===== Tableau (desktop ≥ lg) ===== -->
+        <div class="csu-table-wrapper d-none d-lg-block">
           <table class="csu-table">
             <thead>
               <tr>
@@ -83,9 +87,9 @@ import Swal from 'sweetalert2';
                   <td>{{ e.bureauCsuNom || '-' }}</td>
                   <td>{{ e.agentNom || '-' }}</td>
                   <td>
-                    <span class="csu-badge" 
-                      [class.csu-badge-primary]="e.statut === 'EN_COURS'" 
-                      [class.csu-badge-success]="e.statut === 'VALIDE'" 
+                    <span class="csu-badge"
+                      [class.csu-badge-primary]="e.statut === 'EN_COURS'"
+                      [class.csu-badge-success]="e.statut === 'VALIDE'"
                       [class.csu-badge-danger]="e.statut === 'REJETE'"
                       [class.csu-badge-warning]="e.statut === 'SUSPENDU'">
                       {{ getStatutLabel(e.statut) }}
@@ -110,32 +114,80 @@ import Swal from 'sweetalert2';
               }
             </tbody>
           </table>
+        </div>
 
-          <!-- Pagination -->
+        <!-- ===== Cartes résumé (mobile/tablette < lg) ===== -->
+        <div class="csu-list d-lg-none">
+          @for (e of enrolements; track e.id) {
+            <csu-list-card>
+              <div class="csu-list-card-head">
+                <div class="csu-list-card-lead secondary"><i class="bi bi-shield-check"></i></div>
+                <div class="csu-list-card-body">
+                  <div class="csu-list-card-title">
+                    @if (e.prenom || e.nom) { {{ e.prenom }} {{ e.nom }} }
+                    @else if (e.patient) { {{ e.patient.prenom }} {{ e.patient.nom }} }
+                    @else { Bénéficiaire }
+                  </div>
+                  <div class="csu-list-card-sub">N° {{ e.numeroBeneficiaire }}</div>
+                </div>
+                <span class="csu-badge"
+                  [class.csu-badge-primary]="e.statut === 'EN_COURS'"
+                  [class.csu-badge-success]="e.statut === 'VALIDE'"
+                  [class.csu-badge-danger]="e.statut === 'REJETE'"
+                  [class.csu-badge-warning]="e.statut === 'SUSPENDU'">
+                  {{ getStatutLabel(e.statut) }}
+                </span>
+              </div>
+
+              <div class="csu-list-card-meta">
+                <div class="meta"><span class="meta-label">Date</span><span class="meta-value">{{ e.dateEnrolement | date:'dd/MM/yyyy' }}</span></div>
+                <div class="meta"><span class="meta-label">Bureau</span><span class="meta-value">{{ e.bureauCsuNom || '-' }}</span></div>
+                <div class="meta"><span class="meta-label">Agent</span><span class="meta-value">{{ e.agentNom || '-' }}</span></div>
+              </div>
+
+              <div class="csu-list-card-actions">
+                @if (canUpdateStatus(e.statut) && canModify(e)) {
+                  <button (click)="onUpdateStatus(e, 'VALIDE')" class="csu-btn csu-btn-light text-success" aria-label="Valider l'adhésion">
+                    <i class="bi bi-check-circle"></i>
+                  </button>
+                  <button (click)="onUpdateStatus(e, 'REJETE')" class="csu-btn csu-btn-light text-csu-danger" aria-label="Rejeter l'adhésion">
+                    <i class="bi bi-x-circle"></i>
+                  </button>
+                }
+                <button (click)="viewObservations(e)" class="csu-btn csu-btn-light">
+                  <i class="bi bi-chat-text"></i> Observations
+                </button>
+              </div>
+            </csu-list-card>
+          }
+        </div>
+
+        <!-- ===== Pagination (partagée) ===== -->
+        <div class="csu-pagination-card">
           <div class="csu-pagination">
             <div class="csu-pagination-info">
               Affichage de {{ page * size + 1 }} à {{ Math.min((page + 1) * size, totalElements) }} sur {{ totalElements }} enrôlements
             </div>
             <div class="csu-pagination-controls">
-              <button class="csu-pagination-btn" [disabled]="page === 0" (click)="onPageChange(page - 1)">
+              <button class="csu-pagination-btn" [disabled]="page === 0" (click)="onPageChange(page - 1)" aria-label="Page précédente">
                 <i class="bi bi-chevron-left"></i>
               </button>
               @for (pNum of getPagesArray(); track pNum) {
-                <button 
-                  class="csu-pagination-btn" 
-                  [class.active]="pNum === page" 
+                <button
+                  class="csu-pagination-btn"
+                  [class.active]="pNum === page"
                   (click)="onPageChange(pNum)"
                 >
                   {{ pNum + 1 }}
                 </button>
               }
-              <button class="csu-pagination-btn" [disabled]="page >= totalPages - 1" (click)="onPageChange(page + 1)">
+              <button class="csu-pagination-btn" [disabled]="page >= totalPages - 1" (click)="onPageChange(page + 1)" aria-label="Page suivante">
                 <i class="bi bi-chevron-right"></i>
               </button>
             </div>
           </div>
-        }
-      </div>
+        </div>
+      }
     </div>
   `,
   styles: [`

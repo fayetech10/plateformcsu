@@ -8,3 +8,4 @@ export { EmptyStateComponent } from './empty-state.component';
 export { LoadingComponent } from './loading.component';
 export { KpiCardComponent, KpiTone } from './kpi-card.component';
 export { GlobalLoaderComponent } from './global-loader.component';
+export { CardListItemComponent } from './card-list-item.component';
