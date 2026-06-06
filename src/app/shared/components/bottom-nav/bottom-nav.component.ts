@@ -1,12 +1,15 @@
-import { Component, inject, HostListener } from '@angular/core';
+import { Component, inject, HostListener, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { AuthService } from '../../../core/services/auth.service';
+import { PermissionService } from '../../../core/services/permission.service';
 
 @Component({
   selector: 'app-bottom-nav',
   standalone: true,
   imports: [CommonModule, RouterLink, RouterLinkActive],
   template: `
+    @if (!isAdmin) {
     <!-- FAB Overlay -->
     <div class="fab-overlay" [class.active]="isMenuOpen" (click)="toggleMenu()"></div>
 
@@ -58,6 +61,7 @@ import { Router, RouterLink, RouterLinkActive } from '@angular/router';
         </div>
       </a>
     </div>
+    }
 
     <!-- Bottom Navigation Bar -->
     <nav class="mobile-bottom-nav">
@@ -73,15 +77,33 @@ import { Router, RouterLink, RouterLinkActive } from '@angular/router';
         <span class="bottom-nav-label">Tableau de bord</span>
       </a>
 
-      <!-- FAB Center Button -->
-      <div class="bottom-nav-fab-wrapper">
-        <button class="bottom-nav-fab" [class.active]="isMenuOpen" (click)="toggleMenu()">
-          <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="fab-icon">
-            <line x1="12" y1="5" x2="12" y2="19"/>
-            <line x1="5" y1="12" x2="19" y2="12"/>
-          </svg>
-        </button>
-      </div>
+      <!-- FAB Center Button (masqué pour les administrateurs) -->
+      @if (!isAdmin) {
+        <div class="bottom-nav-fab-wrapper">
+          <button class="bottom-nav-fab" [class.active]="isMenuOpen" (click)="toggleMenu()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="fab-icon">
+              <line x1="12" y1="5" x2="12" y2="19"/>
+              <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+          </button>
+        </div>
+      }
+
+      <!-- Notifications (Admin) : remplace le FAB dans la barre du bas -->
+      @if (isAdmin) {
+        <a class="bottom-nav-item" routerLink="/permissions" routerLinkActive="active">
+          <div class="bottom-nav-icon notif-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+            </svg>
+            @if (nbEnAttente > 0) {
+              <span class="bottom-nav-badge">{{ nbEnAttente > 99 ? '99+' : nbEnAttente }}</span>
+            }
+          </div>
+          <span class="bottom-nav-label">Demandes</span>
+        </a>
+      }
 
       <a class="bottom-nav-item" routerLink="/rapports" routerLinkActive="active">
         <div class="bottom-nav-icon">
@@ -155,6 +177,27 @@ import { Router, RouterLink, RouterLinkActive } from '@angular/router';
       justify-content: center;
       transition: transform 0.25s ease;
     }
+
+    /* Badge de notification (compteur de demandes en attente) */
+    .notif-icon { position: relative; }
+    .bottom-nav-badge {
+      position: absolute;
+      top: -6px;
+      right: -10px;
+      min-width: 18px;
+      height: 18px;
+      padding: 0 5px;
+      border-radius: 9px;
+      background: #E53935;
+      color: #fff;
+      font-size: 0.62rem;
+      font-weight: 800;
+      line-height: 18px;
+      text-align: center;
+      box-shadow: 0 0 0 2px rgba(255,255,255,0.92);
+      animation: notif-pop 0.3s ease;
+    }
+    @keyframes notif-pop { from { transform: scale(0); } to { transform: scale(1); } }
 
     .bottom-nav-label {
       font-size: 0.65rem;
@@ -307,9 +350,41 @@ import { Router, RouterLink, RouterLinkActive } from '@angular/router';
     }
   `]
 })
-export class BottomNavComponent {
+export class BottomNavComponent implements OnInit, OnDestroy {
   private router = inject(Router);
+  private authService = inject(AuthService);
+  private permissionService = inject(PermissionService);
+
   isMenuOpen = false;
+  nbEnAttente = 0;
+  private pollTimer?: any;
+  private refreshHandler = () => this.refreshCount();
+
+  /** Les administrateurs n'ont pas le bouton d'ajout rapide (FAB) en mobile. */
+  get isAdmin(): boolean {
+    return this.authService.isAdmin();
+  }
+
+  ngOnInit(): void {
+    if (this.isAdmin) {
+      this.refreshCount();
+      // Rafraîchissement périodique léger (sans loader global)
+      this.pollTimer = setInterval(() => this.refreshCount(), 60000);
+      window.addEventListener('csu:permissions-updated', this.refreshHandler);
+    }
+  }
+
+  ngOnDestroy(): void {
+    if (this.pollTimer) clearInterval(this.pollTimer);
+    window.removeEventListener('csu:permissions-updated', this.refreshHandler);
+  }
+
+  private refreshCount(): void {
+    this.permissionService.countAttente().subscribe({
+      next: (r) => (this.nbEnAttente = r.enAttente),
+      error: () => {}
+    });
+  }
 
   toggleMenu(): void {
     this.isMenuOpen = !this.isMenuOpen;

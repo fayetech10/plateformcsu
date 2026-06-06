@@ -32,7 +32,7 @@ import Swal from 'sweetalert2';
       <div class="csu-navbar-right">
         <!-- Notifications : demandes de permission (Admin) -->
         @if (isAdmin) {
-          <button class="notif-btn" (click)="goToPermissions()"
+          <button class="notif-btn d-none d-lg-flex" (click)="goToPermissions()"
                   [title]="nbEnAttente > 0 ? (nbEnAttente + ' demande(s) de permission en attente') : 'Aucune demande en attente'">
             <i class="bi bi-bell"></i>
             @if (nbEnAttente > 0) {

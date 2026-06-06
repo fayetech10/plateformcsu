@@ -27,16 +27,6 @@ import { CardListItemComponent } from '../../../shared/ui';
           </h1>
           <p class="csu-page-subtitle">Supervision des utilisateurs, bureaux et de l'activité de la plateforme</p>
         </div>
-        <div class="csu-page-actions">
-          <button (click)="reload()" class="csu-btn csu-btn-light" [disabled]="loading">
-            <i class="bi bi-arrow-clockwise" [class.spin]="loading"></i>
-            Actualiser
-          </button>
-          <a routerLink="/admin/utilisateurs/nouveau" class="csu-btn csu-btn-primary">
-            <i class="bi bi-person-plus"></i>
-            Nouvel utilisateur
-          </a>
-        </div>
       </div>
 
       @if (loading) {
