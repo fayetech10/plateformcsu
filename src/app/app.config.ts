@@ -9,6 +9,7 @@ import { routes } from './app.routes';
 import { provideClientHydration } from '@angular/platform-browser';
 import { jwtInterceptor } from './core/interceptors/jwt.interceptor';
 import { errorInterceptor } from './core/interceptors/error.interceptor';
+import { loadingInterceptor } from './core/interceptors/loading.interceptor';
 
 registerLocaleData(localeFr);
 
@@ -16,7 +17,7 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideRouter(routes),
     provideClientHydration(),
-    provideHttpClient(withInterceptors([jwtInterceptor, errorInterceptor]), withFetch()),
+    provideHttpClient(withInterceptors([jwtInterceptor, loadingInterceptor, errorInterceptor]), withFetch()),
     provideAnimations(),
     { provide: LOCALE_ID, useValue: 'fr' }
   ]

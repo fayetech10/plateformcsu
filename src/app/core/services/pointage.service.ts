@@ -3,6 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { PointageStatutJour, PointageLigne, PointagesJour, Coordonnees, PointageArriveeResponse } from '../models/pointage.model';
+import { SKIP_LOADER } from '../interceptors/loading.interceptor';
 
 @Injectable({
   providedIn: 'root'
@@ -12,7 +13,8 @@ export class PointageService {
   private apiUrl = `${environment.apiUrl}/pointages`;
 
   getMyToday(): Observable<PointageStatutJour> {
-    return this.http.get<PointageStatutJour>(`${this.apiUrl}/me/today`);
+    // Rappel de pointage chargé en arrière-plan → pas de loader global
+    return this.http.get<PointageStatutJour>(`${this.apiUrl}/me/today`, { headers: SKIP_LOADER });
   }
 
   pointerArrivee(coords?: Coordonnees): Observable<PointageArriveeResponse> {

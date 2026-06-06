@@ -413,21 +413,34 @@ import { ActivitesAVenirComponent } from '../activites/activites-a-venir.compone
     }
 
     @media (max-width: 576px) {
-      .kpi-card {
-        min-width: 160px;
-        padding: 0.85rem;
-        border-radius: 14px;
+      /* Plus de scroll horizontal : grille 2 colonnes qui tient dans l'écran */
+      .kpi-grid-container {
+        overflow-x: visible;
+        padding-bottom: 0;
       }
 
+      .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.6rem;
+        min-width: 0;
+      }
+
+      /* Cartes horizontales : icône à gauche, chiffre + libellé à droite */
       .kpi-card {
-        padding: 1rem;
-        border-radius: 14px;
+        flex-direction: row;
+        align-items: center;
+        gap: 0.6rem;
+        min-width: 0;
+        padding: 0.7rem;
+        border-radius: 12px;
       }
 
       .kpi-icon-wrap {
         width: 38px;
         height: 38px;
         border-radius: 10px;
+        flex-shrink: 0;
       }
 
       .kpi-icon-wrap svg {
@@ -435,17 +448,22 @@ import { ActivitesAVenirComponent } from '../activites/activites-a-venir.compone
         height: 18px;
       }
 
+      .kpi-content {
+        flex: 1;
+        min-width: 0;
+      }
+
       .kpi-value {
-        font-size: 1.5rem;
+        font-size: 1.25rem;
       }
 
       .kpi-label {
         font-size: 0.7rem;
       }
 
+      /* Badge de tendance masqué en mobile pour éviter tout débordement */
       .kpi-trend {
-        font-size: 0.65rem;
-        padding: 3px 6px;
+        display: none;
       }
     }
   `]
