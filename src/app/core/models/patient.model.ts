@@ -53,4 +53,7 @@ export interface Patient {
   // Identity photos
   photoIdentiteRecto?: string;
   photoIdentiteVerso?: string;
+
+  totalBonsCommande?: number;
+  totalLettresGarantie?: number;
 }

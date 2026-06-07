@@ -1,6 +1,7 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { Subscription } from 'rxjs';
 import { debounceTime } from 'rxjs/operators';
 import { RapportService } from '../../core/services/rapport.service';
 import { BureauService } from '../../core/services/bureau.service';
@@ -21,9 +22,11 @@ import Swal from 'sweetalert2';
         <div>
           <h1 class="csu-page-title">
             <i class="bi bi-file-earmark-bar-graph-fill text-csu-primary"></i>
-            Génération des Rapports
+            {{ isAdmin ? 'Visualisation des Rapports' : 'Génération des Rapports' }}
           </h1>
-          <p class="csu-page-subtitle">Exportez les indicateurs opérationnels clés au format PDF ou Excel</p>
+          <p class="csu-page-subtitle">
+            {{ isAdmin ? 'Consultez et visualisez les indicateurs de synthèse générés pour les différents bureaux CSU' : 'Exportez les indicateurs opérationnels clés au format PDF ou Excel' }}
+          </p>
         </div>
       </div>
 
@@ -34,7 +37,7 @@ import Swal from 'sweetalert2';
             <div class="csu-card-header">
               <h3 class="csu-card-title">
                 <i class="bi bi-gear-fill text-csu-primary"></i>
-                Paramètres d'exportation
+                {{ isAdmin ? 'Filtres de visualisation' : "Paramètres d'exportation" }}
               </h3>
             </div>
 
@@ -125,19 +128,21 @@ import Swal from 'sweetalert2';
                 }
 
                 <!-- Only My Data (Toggle for Agents/All users) -->
-                <div class="col-12 mt-2">
-                  <div class="form-check form-switch">
-                    <input
-                      class="form-check-input"
-                      type="checkbox"
-                      id="onlyMyData"
-                      formControlName="onlyMyData"
-                    >
-                    <label class="form-check-label text-secondary small" for="onlyMyData">
-                      N'exporter que mes saisies (données associées à mon compte agent)
-                    </label>
+                @if (!isAdmin) {
+                  <div class="col-12 mt-2">
+                    <div class="form-check form-switch">
+                      <input
+                        class="form-check-input"
+                        type="checkbox"
+                        id="onlyMyData"
+                        formControlName="onlyMyData"
+                      >
+                      <label class="form-check-label text-secondary small" for="onlyMyData">
+                        N'exporter que mes saisies (données associées à mon compte agent)
+                      </label>
+                    </div>
                   </div>
-                </div>
+                }
               </div>
 
               <!-- Export Buttons -->
@@ -211,7 +216,7 @@ import Swal from 'sweetalert2';
         <div class="csu-card-header">
           <h3 class="csu-card-title">
             <i class="bi bi-clipboard-data text-csu-primary"></i>
-            Aperçu de la synthèse
+            {{ isAdmin ? 'Visualisation de la synthèse' : 'Aperçu de la synthèse' }}
             @if (summary) { <span class="period-tag">{{ summary.bureauNom }} · {{ rapportForm.value.startDate }} → {{ rapportForm.value.endDate }}</span> }
           </h3>
           <button type="button" class="csu-btn csu-btn-light btn-sm" (click)="loadSummary()" [disabled]="loadingSummary">
@@ -234,7 +239,7 @@ import Swal from 'sweetalert2';
     @keyframes spin { to { transform: rotate(360deg); } }
   `]
 })
-export class RapportsComponent implements OnInit {
+export class RapportsComponent implements OnInit, OnDestroy {
   private fb = inject(FormBuilder);
   private rapportService = inject(RapportService);
   private bureauService = inject(BureauService);
@@ -244,6 +249,12 @@ export class RapportsComponent implements OnInit {
   structures: any[] = [];
   exportingPdf = false;
   exportingExcel = false;
+
+  // --- Propriétés pour l'aperçu de synthèse et les raccourcis de période ---
+  activePreset: string = 'month';
+  summary: RapportSummary | null = null;
+  loadingSummary = false;
+  private formSub?: Subscription;
 
   rapportForm = this.fb.group({
     startDate: [this.getDefaultStartDate(), [Validators.required]],
@@ -258,10 +269,30 @@ export class RapportsComponent implements OnInit {
       this.loadBureaux();
       this.loadStructures();
     }
+
+    // Recharger la synthèse automatiquement quand le formulaire change
+    this.formSub = this.rapportForm.valueChanges
+      .pipe(debounceTime(400))
+      .subscribe(() => {
+        if (this.rapportForm.valid) {
+          this.loadSummary();
+        }
+      });
+
+    // Chargement initial de la synthèse
+    this.loadSummary();
+  }
+
+  ngOnDestroy(): void {
+    this.formSub?.unsubscribe();
   }
 
   get canFilterByBureau(): boolean {
     return this.authService.isAdmin() || this.authService.isSuperviseur();
+  }
+
+  get isAdmin(): boolean {
+    return this.authService.isAdmin();
   }
 
   isFieldInvalid(field: string): boolean {
@@ -290,6 +321,79 @@ export class RapportsComponent implements OnInit {
   loadStructures(): void {
     // TODO: Replace with real API call when structure service is available
     this.structures = [];
+  }
+
+  // ── Raccourcis de période ──────────────────────────────────────────
+
+  setPreset(preset: string): void {
+    this.activePreset = preset;
+    const today = new Date();
+    let start: Date;
+
+    switch (preset) {
+      case 'today':
+        start = new Date(today);
+        break;
+      case '7d':
+        start = new Date(today);
+        start.setDate(start.getDate() - 7);
+        break;
+      case 'month':
+        start = new Date(today.getFullYear(), today.getMonth(), 1);
+        break;
+      case '30d':
+        start = new Date(today);
+        start.setDate(start.getDate() - 30);
+        break;
+      case 'quarter': {
+        const quarterMonth = Math.floor(today.getMonth() / 3) * 3;
+        start = new Date(today.getFullYear(), quarterMonth, 1);
+        break;
+      }
+      case 'year':
+        start = new Date(today.getFullYear(), 0, 1);
+        break;
+      default:
+        start = new Date(today.getFullYear(), today.getMonth(), 1);
+    }
+
+    this.rapportForm.patchValue({
+      startDate: start.toISOString().split('T')[0],
+      endDate: today.toISOString().split('T')[0]
+    });
+  }
+
+  // ── Chargement de la synthèse (aperçu) ────────────────────────────
+
+  loadSummary(): void {
+    if (this.rapportForm.invalid) return;
+    this.loadingSummary = true;
+
+    const { startDate, endDate, bureauCsuId, onlyMyData } = this.rapportForm.value;
+
+    let actualBureauId = bureauCsuId ? Number(bureauCsuId) : undefined;
+    if (this.authService.isAgent()) {
+      actualBureauId = this.authService.currentUserValue?.bureau_id;
+    }
+
+    const actualAgentId = onlyMyData ? this.authService.currentUserValue?.agent_id : undefined;
+
+    this.rapportService.getSummary(
+      startDate!,
+      endDate!,
+      actualBureauId,
+      actualAgentId
+    ).subscribe({
+      next: (data) => {
+        this.summary = data;
+        this.loadingSummary = false;
+      },
+      error: (err) => {
+        console.error('Erreur chargement synthèse:', err);
+        this.summary = null;
+        this.loadingSummary = false;
+      }
+    });
   }
 
   exportPdf(): void {
