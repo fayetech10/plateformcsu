@@ -44,6 +44,17 @@ export class PatientService {
     return this.http.get<Patient>(`${this.apiUrl}/${id}`);
   }
 
+  /**
+   * Recherche un patient existant par identifiant (CNI prioritaire, sinon matricule).
+   * Renvoie null si aucun patient (204).
+   */
+  rechercheParIdentite(cni?: string, matricule?: string): Observable<Patient | null> {
+    let params = new HttpParams();
+    if (cni) params = params.set('cni', cni);
+    if (matricule) params = params.set('matricule', matricule);
+    return this.http.get<Patient | null>(`${this.apiUrl}/recherche-identite`, { params });
+  }
+
   getStats(): Observable<PatientStats> {
     return this.http.get<PatientStats>(`${this.apiUrl}/stats`);
   }

@@ -73,7 +73,6 @@ import Swal from 'sweetalert2';
                 <th>Âge / Né(e) le</th>
                 <th>Téléphone</th>
                 <th>Région</th>
-                <th>Bons & Garanties</th>
                 <th class="text-end">Actions</th>
               </tr>
             </thead>
@@ -97,16 +96,6 @@ import Swal from 'sweetalert2';
                   <td>{{ calculateAge(p.dateNaissance) }} ans <span class="text-muted small">({{ p.dateNaissance | date:'dd/MM/yyyy' }})</span></td>
                   <td>{{ p.telephone || '-' }}</td>
                   <td>{{ p.region }}</td>
-                  <td>
-                    <div class="d-inline-flex gap-2">
-                      <span class="badge bg-primary d-flex align-items-center gap-1" title="Bons de commande">
-                        <i class="bi bi-receipt-cutoff"></i> {{ p.totalBonsCommande || 0 }}
-                      </span>
-                      <span class="badge bg-success d-flex align-items-center gap-1" title="Lettres de garantie">
-                        <i class="bi bi-shield-check"></i> {{ p.totalLettresGarantie || 0 }}
-                      </span>
-                    </div>
-                  </td>
                   <td class="text-end">
                     <div class="d-inline-flex gap-2">
                       <a [routerLink]="['/patients', p.id]" class="csu-btn-icon" title="Consulter la fiche">
@@ -149,8 +138,6 @@ import Swal from 'sweetalert2';
                 @if (p.telephone) {
                   <span class="csu-badge csu-badge-primary"><i class="bi bi-telephone"></i> {{ p.telephone }}</span>
                 }
-                <span class="csu-badge csu-badge-primary" title="Bons de commande"><i class="bi bi-receipt-cutoff"></i> BC: {{ p.totalBonsCommande || 0 }}</span>
-                <span class="csu-badge csu-badge-success" title="Lettres de garantie"><i class="bi bi-shield-check"></i> LG: {{ p.totalLettresGarantie || 0 }}</span>
               </div>
 
               <div class="csu-list-card-actions">

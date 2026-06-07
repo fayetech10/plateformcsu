@@ -18,7 +18,7 @@ import { NotificationBellComponent } from '../notification-bell/notification-bel
         <div class="d-none d-md-flex align-items-center gap-2">
           <span class="badge bg-csu-primary-light text-csu-primary px-3 py-2 rounded-pill fw-semibold">
             <i class="bi bi-building-fill me-1"></i>
-            {{ user?.bureauCsuNom || 'Bureau non affecté' }}
+            {{ user?.bureauCsuNom || 'Service Régionale de Thiès' }}
           </span>
           @if (user?.structureNom) {
             <span class="badge bg-light text-secondary px-3 py-2 rounded-pill fw-semibold border">
@@ -50,7 +50,7 @@ import { NotificationBellComponent } from '../notification-bell/notification-bel
           <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg mt-2 p-2" aria-labelledby="userDropdown">
             <li class="px-3 py-2 border-bottom mb-2">
               <span class="d-block fw-bold small text-muted">Bureau de rattachement</span>
-              <span class="small">{{ user?.bureauCsuNom || 'Non affecté' }}</span>
+              <span class="small">{{ user?.bureauCsuNom || 'Service Régionale de Thiès' }}</span>
               @if (user?.structureNom) {
                 <span class="d-block fw-bold small text-muted mt-2">Structure</span>
                 <span class="small">{{ user?.structureNom }}</span>

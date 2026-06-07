@@ -1,7 +1,8 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { PatientService } from '../../../core/services/patient.service';
+import { LettreGarantieService } from '../../../core/services/lettre-garantie.service';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import Swal from 'sweetalert2';
 
@@ -30,7 +31,7 @@ interface SpecificField {
 @Component({
   selector: 'app-patient-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterLink],
   template: `
     <div class="container-fluid animate-fade-in">
       <!-- Header -->
@@ -63,6 +64,67 @@ interface SpecificField {
         <div class="col-12 col-xl-8">
           <div class="csu-card">
             <form [formGroup]="patientForm" (ngSubmit)="onSubmit()">
+              <!-- Section 0 : Identification & Vérification (en tête de formulaire) -->
+              @if (!isEditMode) {
+                <div class="ident-section mb-4 p-3 border rounded bg-light">
+                  <h4 class="mb-1 text-csu-primary">
+                    <i class="bi bi-search me-2"></i> Vérification d'identité
+                  </h4>
+                  <p class="small text-muted mb-3">
+                    Saisissez le N° CNI ou le N° Matricule pour vérifier si le patient existe déjà.
+                  </p>
+                  <div class="row g-3 align-items-end">
+                    <div class="col-12 col-md-8">
+                      <div class="csu-form-group mb-0">
+                        <label class="csu-form-label" for="identifiantVerification">
+                          N° CNI ou N° Matricule du patient
+                        </label>
+                        <input id="identifiantVerification" type="text" class="csu-form-control"
+                               placeholder="Ex: 1234567890123 ou MAT-2026-001"
+                               [(ngModel)]="identifiantVerification" [ngModelOptions]="{standalone: true}"
+                               (input)="resetCniCheck()" />
+                      </div>
+                    </div>
+                    <div class="col-12 col-md-4">
+                      <button type="button" class="csu-btn csu-btn-secondary w-100" (click)="verifierIdentite()" [disabled]="verifyingCni">
+                        @if (verifyingCni) { <span class="spinner-border spinner-border-sm me-1"></span> Vérification… }
+                        @else { <i class="bi bi-search"></i> Vérifier le patient }
+                      </button>
+                    </div>
+                  </div>
+                  @if (cniCheckMessage) {
+                    <div class="cni-check mt-3" [class.free]="!cniExists">
+                      <i class="bi" [ngClass]="cniExists ? 'bi-exclamation-triangle-fill' : 'bi-check-circle-fill'"></i>
+                      <span>{{ cniCheckMessage }}</span>
+                    </div>
+                  }
+                </div>
+              }
+
+              <!-- Champs d'Identité (CNI, Matricule, Registre, etc.) -->
+              @if (identityFields.length) {
+                <h4 class="mb-3 text-csu-primary">
+                  <i class="bi bi-person-badge me-2"></i> Documents d'Identification
+                </h4>
+                <div class="row g-3 mb-4">
+                  @for (f of identityFields; track f.key) {
+                    <div class="col-12 col-md-6">
+                      <div class="csu-form-group">
+                        <label class="csu-form-label" [for]="f.key">
+                          {{ f.label }} @if (f.required) {<span class="text-danger">*</span>}
+                        </label>
+                        <input [id]="f.key" type="text" class="csu-form-control"
+                               [class.is-invalid]="isFieldInvalid(f.key)" [formControlName]="f.key"
+                               [attr.placeholder]="f.placeholder || ''" />
+                        @if (isFieldInvalid(f.key)) {
+                          <div class="csu-invalid-feedback"><i class="bi bi-info-circle"></i> Ce champ est requis</div>
+                        }
+                      </div>
+                    </div>
+                  }
+                </div>
+              }
+
               <!-- Section 1 : Informations Générales -->
               <h4 class="mb-4 text-csu-primary">
                 <i class="bi bi-person-vcard me-2"></i> Informations Générales
@@ -375,12 +437,28 @@ interface SpecificField {
                             <input [id]="f.key" type="datetime-local" class="csu-form-control" [class.is-invalid]="isFieldInvalid(f.key)" [formControlName]="f.key" />
                           }
                           @default {
-                            <input [id]="f.key" type="text" class="csu-form-control" [class.is-invalid]="isFieldInvalid(f.key)" [formControlName]="f.key" [attr.placeholder]="f.placeholder || ''" />
+                            @if (f.key === 'numeroCni' && !isEditMode) {
+                              <div class="input-group">
+                                <input [id]="f.key" type="text" class="csu-form-control" [class.is-invalid]="isFieldInvalid(f.key)" [formControlName]="f.key" [attr.placeholder]="f.placeholder || ''" (input)="resetCniCheck()" />
+                                <button type="button" class="csu-btn csu-btn-secondary" (click)="verifierCni()" [disabled]="verifyingCni" style="white-space:nowrap;">
+                                  @if (verifyingCni) { <span class="spinner-border spinner-border-sm"></span> }
+                                  @else { <i class="bi bi-search"></i> Vérifier }
+                                </button>
+                              </div>
+                            } @else {
+                              <input [id]="f.key" type="text" class="csu-form-control" [class.is-invalid]="isFieldInvalid(f.key)" [formControlName]="f.key" [attr.placeholder]="f.placeholder || ''" />
+                            }
                           }
                         }
                         @if (isFieldInvalid(f.key)) {
                           <div class="csu-invalid-feedback">
                             <i class="bi bi-info-circle"></i> Ce champ est requis
+                          </div>
+                        }
+                        @if (f.key === 'numeroCni' && cniCheckMessage) {
+                          <div class="cni-check" [class.free]="!cniExists">
+                            <i class="bi" [ngClass]="cniExists ? 'bi-exclamation-triangle-fill' : 'bi-check-circle-fill'"></i>
+                            <span>{{ cniCheckMessage }}</span>
                           </div>
                         }
                       </div>
@@ -450,6 +528,12 @@ interface SpecificField {
     </div>
   `,
   styles: [`
+    .cni-check {
+      display: flex; align-items: center; gap: 7px; margin-top: 7px;
+      font-size: 0.8rem; font-weight: 600; padding: 6px 10px; border-radius: 8px;
+      background: rgba(245,124,0,0.12); color: #E65100;
+    }
+    .cni-check.free { background: rgba(67,160,71,0.12); color: #2E7D32; }
     .badge-type {
       display: inline-flex;
       align-items: center;
@@ -585,6 +669,7 @@ interface SpecificField {
 export class PatientFormComponent implements OnInit {
   private fb = inject(FormBuilder);
   private patientService = inject(PatientService);
+  private lettreService = inject(LettreGarantieService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
 
@@ -594,6 +679,12 @@ export class PatientFormComponent implements OnInit {
   patientType: string | null = null;
   photoRectoUrl: string | null = null;
   photoVersoUrl: string | null = null;
+
+  // Vérification d'existence par CNI (temps réel)
+  verifyingCni = false;
+  cniCheckMessage = '';
+  cniExists = false;
+  identifiantVerification = '';
 
   // Cascading Localisation lists
   regions: string[] = ['Dakar', 'Thiès', 'Diourbel', 'Saint-Louis'];
@@ -675,6 +766,7 @@ export class PatientFormComponent implements OnInit {
   // Configuration des champs spécifiques par catégorie (ordre & libellés du modèle Excel officiel)
   private fieldConfig: Record<string, SpecificField[]> = {
     'classique': [
+      { key: 'numeroCni', label: 'N° CNI (identifiant patient)', type: 'text', required: true, placeholder: 'Numéro de CNI' },
       { key: 'numeroMatricule', label: 'N° Matricule / Code Bénéficiaire', type: 'text', required: true, placeholder: 'Ex: MAT-2026-001' },
       { key: 'datePriseEnCharge', label: 'Date de prise en charge', type: 'date', required: true },
       { key: 'service', label: 'Service', type: 'text', required: true, placeholder: 'Service médical' },
@@ -694,14 +786,16 @@ export class PatientFormComponent implements OnInit {
       { key: 'montantTotal', label: 'Montant Total', type: 'number' }
     ],
     'cesarienne': [
-      { key: 'numeroMatricule', label: 'N° Matricule / N° CNI Patient / N° accompagnant', type: 'text', required: true },
+      { key: 'numeroCni', label: 'N° CNI (identifiant patient)', type: 'text', required: true, placeholder: 'Numéro de CNI' },
+      { key: 'numeroMatricule', label: 'N° Matricule / N° accompagnant', type: 'text', required: true },
       { key: 'indicationMotifCbt', label: 'Indication / Motif de CBT', type: 'textarea' },
       { key: 'numeroRegistreBloc', label: 'N° Registre Bloc opératoire', type: 'text' },
       { key: 'dateHeureIntervention', label: 'Date et Heure Intervention', type: 'datetime' },
       { key: 'dureeHospitalisationJours', label: 'Durée Hospitalisation (jours)', type: 'number' }
     ],
     'dialyse-peritoneale': [
-      { key: 'numeroMatricule', label: 'N° Matricule / N° CNI Patient / N° accompagnant', type: 'text', required: true },
+      { key: 'numeroCni', label: 'N° CNI (identifiant patient)', type: 'text', required: true, placeholder: 'Numéro de CNI' },
+      { key: 'numeroMatricule', label: 'N° Matricule / N° accompagnant', type: 'text', required: true },
       { key: 'ircIra', label: 'IRC / IRA', type: 'select', required: true, options: ['IRC', 'IRA'] },
       { key: 'datePriseEnCharge', label: 'Date de prise en charge', type: 'date' },
       { key: 'nbrePoches', label: 'Nbre de Poches', type: 'number' },
@@ -709,14 +803,16 @@ export class PatientFormComponent implements OnInit {
       { key: 'montantTotal', label: 'Prix Total', type: 'number' }
     ],
     'hemodialyse': [
-      { key: 'numeroMatricule', label: 'N° Matricule / N° CNI Patient / N° accompagnant', type: 'text', required: true },
+      { key: 'numeroCni', label: 'N° CNI (identifiant patient)', type: 'text', required: true, placeholder: 'Numéro de CNI' },
+      { key: 'numeroMatricule', label: 'N° Matricule / N° accompagnant', type: 'text', required: true },
       { key: 'ircIra', label: 'IRC / IRA', type: 'select', options: ['IRC', 'IRA'] },
       { key: 'nbreSeances', label: 'Nbre de Séances', type: 'number' },
       { key: 'prixUnitaire', label: 'Prix Unitaire', type: 'number' },
       { key: 'montantTotal', label: 'Prix Total', type: 'number' }
     ],
     'bsf': [
-      { key: 'numeroMatricule', label: 'N° Matricule / CNI', type: 'text', required: true },
+      { key: 'numeroCni', label: 'N° CNI (identifiant patient)', type: 'text', required: true, placeholder: 'Numéro de CNI' },
+      { key: 'numeroMatricule', label: 'N° Matricule', type: 'text', required: true },
       { key: 'datePriseEnCharge', label: 'Date de prise en charge', type: 'date', required: true },
       { key: 'service', label: 'Service', type: 'text', required: true },
       { key: 'prestationMedicament', label: 'Prestation(s)', type: 'text' },
@@ -725,7 +821,8 @@ export class PatientFormComponent implements OnInit {
       { key: 'montantTotal', label: 'Montant facturé à la SEN-CSU', type: 'number' }
     ],
     'cec': [
-      { key: 'numeroMatricule', label: 'N° Matricule / CNI', type: 'text', required: true },
+      { key: 'numeroCni', label: 'N° CNI (identifiant patient)', type: 'text', required: true, placeholder: 'Numéro de CNI' },
+      { key: 'numeroMatricule', label: 'N° Matricule', type: 'text', required: true },
       { key: 'datePriseEnCharge', label: 'Date de prise en charge', type: 'date', required: true },
       { key: 'service', label: 'Service', type: 'text', required: true },
       { key: 'prestationMedicament', label: 'Prestation(s)', type: 'text' },
@@ -744,6 +841,7 @@ export class PatientFormComponent implements OnInit {
       { key: 'montantTotal', label: 'Montant facturé à la SEN-CSU', type: 'number' }
     ],
     'ndongo-dara': [
+      { key: 'numeroCni', label: 'N° CNI (identifiant patient)', type: 'text', required: true, placeholder: 'Numéro de CNI' },
       { key: 'numeroMatricule', label: 'N° Matricule / Code Bénéficiaire', type: 'text', required: true },
       { key: 'datePriseEnCharge', label: 'Date de prise en charge', type: 'date', required: true },
       { key: 'service', label: 'Service', type: 'text', required: true },
@@ -754,8 +852,26 @@ export class PatientFormComponent implements OnInit {
     ]
   };
 
-  get specificFields(): SpecificField[] {
+  /** Clés d'identification, saisies dans la section « Identification » en tête de formulaire. */
+  private static readonly ID_KEYS = ['numeroCni', 'numeroMatricule', 'numeroRegistre', 'matriculeExtraitAccompagnant'];
+
+  private get categoryFields(): SpecificField[] {
     return (this.patientType && this.fieldConfig[this.patientType]) || [];
+  }
+
+  /** Champs d'identification (en haut) selon la catégorie. */
+  get identityFields(): SpecificField[] {
+    return this.categoryFields.filter(f => PatientFormComponent.ID_KEYS.includes(f.key));
+  }
+
+  /** Champs spécifiques (hors identifiants, rendus plus bas). */
+  get specificFields(): SpecificField[] {
+    return this.categoryFields.filter(f => !PatientFormComponent.ID_KEYS.includes(f.key));
+  }
+
+  /** Vrai si la vérification est possible (CNI ou matricule présents dans la catégorie). */
+  get hasVerifiableId(): boolean {
+    return this.identityFields.some(f => f.key === 'numeroCni' || f.key === 'numeroMatricule');
   }
 
   ngOnInit(): void {
@@ -794,8 +910,8 @@ export class PatientFormComponent implements OnInit {
       const ctrl = this.patientForm.get(k);
       if (ctrl) { ctrl.clearValidators(); ctrl.updateValueAndValidity({ emitEvent: false }); }
     });
-    // Applique les validateurs requis de la catégorie
-    this.specificFields.filter(f => f.required).forEach(f => {
+    // Applique les validateurs requis de la catégorie (identifiants + champs spécifiques)
+    this.categoryFields.filter(f => f.required).forEach(f => {
       const ctrl = this.patientForm.get(f.key);
       if (ctrl) { ctrl.setValidators([Validators.required]); ctrl.updateValueAndValidity({ emitEvent: false }); }
     });
@@ -1122,23 +1238,219 @@ export class PatientFormComponent implements OnInit {
         }
       });
     } else {
-      this.patientService.createPatient(patientData).subscribe({
-        next: () => {
-          this.submitting = false;
-          Swal.fire({
-            title: 'Succès !',
-            text: 'Le nouveau patient a été enregistré.',
-            icon: 'success',
-            confirmButtonColor: '#00875A'
-          }).then(() => this.router.navigate(['/patients']));
-        },
-        error: () => {
-          this.submitting = false;
-          Swal.fire('Succès !', 'Nouveau patient enregistré (Simulation).', 'success')
-            .then(() => this.router.navigate(['/patients']));
-        }
-      });
+      // Déduplication : vérifier si le patient existe déjà (CNI prioritaire, sinon matricule).
+      const cni = (patientData.numeroCni || '').trim();
+      const matricule = (patientData.numeroMatricule || '').trim();
+
+      if (cni || matricule) {
+        this.patientService.rechercheParIdentite(cni || undefined, matricule || undefined).subscribe({
+          next: (existant) => {
+            if (existant && existant.id) {
+              // Vérifier d'abord s'il a une lettre de garantie encore active
+              this.lettreService.getActive(existant.id).subscribe({
+                next: (lettre) => {
+                  this.submitting = false;
+                  if (lettre && lettre.id) {
+                    Swal.fire({
+                      icon: 'question',
+                      title: 'Lettre de garantie active trouvée',
+                      html: `Le patient correspondant <b>${existant.prenom} ${existant.nom}</b> (dossier <b>${existant.numeroDossier}</b>) `
+                          + `possède une lettre de garantie active (Réf: <b>${lettre.reference}</b>) valable jusqu'au <b>${lettre.dateExpiration}</b>.<br><br>`
+                          + `Voulez-vous enregistrer à nouveau ce patient avec cette même lettre de garantie ?`,
+                      showCancelButton: true,
+                      confirmButtonText: '<i class="bi bi-check-lg"></i> Oui, enregistrer',
+                      cancelButtonText: 'Annuler',
+                      confirmButtonColor: '#00875A',
+                      cancelButtonColor: '#E53935'
+                    }).then((result) => {
+                      if (result.isConfirmed) {
+                        this.creerPatient(patientData);
+                      }
+                    });
+                  } else {
+                    this.proposerLettreGarantie(existant);
+                  }
+                },
+                error: () => {
+                  this.submitting = false;
+                  this.proposerLettreGarantie(existant);
+                }
+              });
+            } else {
+              this.creerPatient(patientData);
+            }
+          },
+          error: () => {
+            this.creerPatient(patientData);
+          }
+        });
+      } else {
+        this.creerPatient(patientData);
+      }
     }
+  }
+
+  /** Crée le patient, émet automatiquement sa lettre de garantie, et redirige vers la liste. */
+  private creerPatient(patientData: any): void {
+    this.submitting = true;
+    this.patientService.createPatient(patientData).subscribe({
+      next: (nouveauPatient: any) => {
+        if (nouveauPatient && nouveauPatient.id) {
+          this.lettreService.emettre(nouveauPatient.id).subscribe({
+            next: (result: any) => {
+              this.submitting = false;
+              Swal.fire({
+                title: 'Succès !',
+                html: `Le nouveau patient a été enregistré avec succès.<br>Lettre de garantie générée : <b>${result.lettre?.reference || ''}</b>.`,
+                icon: 'success',
+                confirmButtonColor: '#00875A'
+              }).then(() => this.router.navigate(['/patients']));
+            },
+            error: (err) => {
+              // Même si la génération automatique échoue, le patient est créé
+              this.submitting = false;
+              Swal.fire({
+                title: 'Patient enregistré',
+                text: 'Le patient a été enregistré, mais la génération automatique de sa lettre de garantie a échoué.',
+                icon: 'warning',
+                confirmButtonColor: '#E65100'
+              }).then(() => this.router.navigate(['/patients']));
+            }
+          });
+        } else {
+          this.submitting = false;
+          this.router.navigate(['/patients']);
+        }
+      },
+      error: () => {
+        this.submitting = false;
+        Swal.fire('Succès !', 'Nouveau patient enregistré (Simulation).', 'success')
+          .then(() => this.router.navigate(['/patients']));
+      }
+    });
+  }
+
+  /** Réinitialise le message de vérification dès que le CNI change. */
+  resetCniCheck(): void {
+    this.cniCheckMessage = '';
+    this.cniExists = false;
+  }
+
+  /** Importe et pré-remplit les informations d'un patient existant */
+  importerInformationsPatient(patient: any): void {
+    if (patient.region) {
+      this.departments = this.locationData[patient.region]?.departments || [];
+      this.patientForm.get('departement')?.enable();
+    }
+    if (patient.region && patient.departement) {
+      this.communes = this.locationData[patient.region]?.communes[patient.departement] || [];
+      this.patientForm.get('commune')?.enable();
+    }
+
+    this.patientForm.patchValue({
+      prenom: patient.prenom || '',
+      nom: patient.nom || '',
+      sexe: patient.sexe || '',
+      dateNaissance: patient.dateNaissance ? patient.dateNaissance.split('T')[0] : '',
+      telephone: patient.telephone || '',
+      region: patient.region || '',
+      departement: patient.departement || '',
+      commune: patient.commune || '',
+      adresse: patient.adresse || '',
+      photoIdentiteRecto: patient.photoIdentiteRecto || '',
+      photoIdentiteVerso: patient.photoIdentiteVerso || '',
+      numeroMatricule: patient.numeroMatricule || '',
+      numeroCni: patient.numeroCni || '',
+      numeroRegistre: patient.numeroRegistre || '',
+      matriculeExtraitAccompagnant: patient.matriculeExtraitAccompagnant || ''
+    });
+
+    this.photoRectoUrl = patient.photoIdentiteRecto || null;
+    this.photoVersoUrl = patient.photoIdentiteVerso || null;
+  }
+
+  /** Déclenche la vérification d'identité depuis le champ CNI du formulaire */
+  verifierCni(): void {
+    const cni = (this.patientForm.get('numeroCni')?.value || '').trim();
+    if (cni) {
+      this.identifiantVerification = cni;
+      this.verifierIdentite();
+    } else {
+      this.cniExists = true;
+      this.cniCheckMessage = 'Saisissez un N° CNI à vérifier.';
+    }
+  }
+
+  /** Vérifie en temps réel si un patient existe déjà (par CNI ou matricule). */
+  verifierIdentite(): void {
+    const value = (this.identifiantVerification || '').trim();
+    if (!value) {
+      this.cniExists = true; // orange (avertissement)
+      this.cniCheckMessage = 'Saisissez un N° CNI ou un N° matricule à vérifier.';
+      return;
+    }
+    this.verifyingCni = true;
+    this.cniCheckMessage = '';
+    this.patientService.rechercheParIdentite(value, value).subscribe({
+      next: (existant) => {
+        if (existant && existant.id) {
+          this.lettreService.getActive(existant.id).subscribe({
+            next: (lettre) => {
+              this.verifyingCni = false;
+              if (lettre && lettre.id) {
+                this.cniExists = false; // Vert (succès de réutilisation de lettre)
+                this.cniCheckMessage = `Patient déjà enregistré : ${existant.prenom} ${existant.nom} (dossier ${existant.numeroDossier}). Une lettre de garantie (Réf: ${lettre.reference}) est active jusqu'au ${lettre.dateExpiration}. Les données ont été pré-remplies.`;
+              } else {
+                this.cniExists = true; // Orange
+                this.cniCheckMessage = `Patient déjà enregistré : ${existant.prenom} ${existant.nom} (dossier ${existant.numeroDossier}) mais sans lettre de garantie active. Les données ont été pré-remplies.`;
+              }
+              this.importerInformationsPatient(existant);
+            },
+            error: () => {
+              this.verifyingCni = false;
+              this.cniExists = true; // Orange
+              this.cniCheckMessage = `Patient déjà enregistré : ${existant.prenom} ${existant.nom} (dossier ${existant.numeroDossier}). Erreur lors de la vérification de la lettre. Les données ont été pré-remplies.`;
+              this.importerInformationsPatient(existant);
+            }
+          });
+        } else {
+          this.verifyingCni = false;
+          this.cniExists = false; // Vert
+          this.cniCheckMessage = "Aucun patient correspondant — vous pouvez poursuivre l'enregistrement.";
+        }
+      },
+      error: () => {
+        this.verifyingCni = false;
+        this.cniExists = true;
+        this.cniCheckMessage = 'Vérification impossible pour le moment. Réessayez.';
+      }
+    });
+  }
+
+  /**
+   * Le patient existe déjà : on ne le réenregistre pas, on propose de lui
+   * délivrer une lettre de garantie (ou de consulter sa fiche).
+   */
+  private proposerLettreGarantie(existant: any): void {
+    Swal.fire({
+      icon: 'info',
+      title: 'Patient déjà enregistré',
+      html: `Un patient correspondant existe déjà :<br><b>${existant.prenom} ${existant.nom}</b> — dossier <b>${existant.numeroDossier}</b>.<br><br>`
+          + `Inutile de le réenregistrer. Vous pouvez lui délivrer une <b>lettre de garantie</b>.`,
+      showCancelButton: true,
+      showDenyButton: true,
+      confirmButtonText: '<i class="bi bi-shield-check"></i> Délivrer la lettre',
+      denyButtonText: 'Voir la fiche',
+      cancelButtonText: 'Annuler',
+      confirmButtonColor: '#00875A',
+      denyButtonColor: '#1565C0'
+    }).then((r) => {
+      if (r.isConfirmed) {
+        this.router.navigate(['/patients', existant.id, 'lettre-garantie']);
+      } else if (r.isDenied) {
+        this.router.navigate(['/patients', existant.id]);
+      }
+    });
   }
 
 

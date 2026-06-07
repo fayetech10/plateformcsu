@@ -11,13 +11,16 @@ import { PointagesJour, PointageLigne } from '../../../core/models/pointage.mode
 import { PermissionService } from '../../../core/services/permission.service';
 import { DemandePermission } from '../../../core/models/permission.model';
 import { AuthService } from '../../../core/services/auth.service';
+import { RapportService } from '../../../core/services/rapport.service';
+import { RapportSummary } from '../../../core/models/rapport-summary.model';
 import { CardListItemComponent } from '../../../shared/ui';
 import { LiveActivityFeedComponent } from './live-activity-feed.component';
+import { RapportSummaryViewComponent } from '../../rapports/rapport-summary-view.component';
 
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule, CardListItemComponent, LiveActivityFeedComponent],
+  imports: [CommonModule, RouterLink, FormsModule, CardListItemComponent, LiveActivityFeedComponent, RapportSummaryViewComponent],
   template: `
     <div class="dash animate-fade-in">
 
@@ -138,6 +141,15 @@ import { LiveActivityFeedComponent } from './live-activity-feed.component';
         <!-- ════════ ACTIVITÉ EN DIRECT (SSE) ════════ -->
         <div class="panel">
           <app-live-activity-feed />
+        </div>
+
+        <!-- ════════ SYNTHÈSE DU MOIS (rapport) ════════ -->
+        <div class="panel">
+          <div class="panel-head">
+            <h3><i class="bi bi-clipboard-data"></i> Synthèse du mois en cours</h3>
+            <a routerLink="/rapports" class="link"><i class="bi bi-download"></i> Générer le rapport</a>
+          </div>
+          <app-rapport-summary-view [summary]="summaryRapport" [loading]="loadingSummaryRapport"></app-rapport-summary-view>
         </div>
 
         <!-- ════════ RÉPARTITION + DERNIERS UTILISATEURS ════════ -->
@@ -603,8 +615,12 @@ export class AdminDashboardComponent implements OnInit, AfterViewInit, OnDestroy
   private pointageService = inject(PointageService);
   private permissionService = inject(PermissionService);
   private authService = inject(AuthService);
+  private rapportService = inject(RapportService);
   private route = inject(ActivatedRoute);
   private platformId = inject(PLATFORM_ID);
+
+  summaryRapport: RapportSummary | null = null;
+  loadingSummaryRapport = true;
 
   flashPermissions = false;
   private focusHandler = () => this.focusPermissions();
@@ -687,6 +703,7 @@ export class AdminDashboardComponent implements OnInit, AfterViewInit, OnDestroy
     this.loadStats();
     this.loadPresence();
     this.loadDemandes();
+    this.loadSummaryRapport();
 
     if (isPlatformBrowser(this.platformId)) {
       window.addEventListener('csu:focus-permissions', this.focusHandler);
@@ -726,6 +743,19 @@ export class AdminDashboardComponent implements OnInit, AfterViewInit, OnDestroy
     this.loadStats();
     this.loadPresence();
     this.loadDemandes();
+    this.loadSummaryRapport();
+  }
+
+  /** Synthèse globale du mois en cours (l'admin ne génère pas de rapport mais visualise les indicateurs). */
+  private loadSummaryRapport(): void {
+    this.loadingSummaryRapport = true;
+    const now = new Date();
+    const start = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
+    const end = now.toISOString().slice(0, 10);
+    this.rapportService.getSummary(start, end).subscribe({
+      next: (s) => { this.summaryRapport = s; this.loadingSummaryRapport = false; },
+      error: () => { this.summaryRapport = null; this.loadingSummaryRapport = false; }
+    });
   }
 
   loadPresence(): void {

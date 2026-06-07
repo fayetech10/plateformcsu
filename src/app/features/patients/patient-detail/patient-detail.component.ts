@@ -1,10 +1,12 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { PatientService } from '../../../core/services/patient.service';
-import { EnrolementService } from '../../../core/services/enrolement.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { BonCommandeService } from '../../../core/services/bon-commande.service';
+import { LettreGarantieService } from '../../../core/services/lettre-garantie.service';
 import { Patient } from '../../../core/models/patient.model';
-import { Enrolement } from '../../../core/models/enrolement.model';
+import { BonCommande } from '../../../core/models/bon-commande.model';
+import { LettreGarantie } from '../../../core/models/lettre-garantie.model';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import Swal from 'sweetalert2';
 
@@ -24,12 +26,6 @@ import Swal from 'sweetalert2';
           <p class="csu-page-subtitle">Dossier N° : {{ patient.numeroDossier }}</p>
         </div>
         <div class="d-flex gap-2">
-          <a [routerLink]="['/patients', patient.id, 'lettre-garantie']" class="csu-btn csu-btn-light">
-            <i class="bi bi-shield-check"></i> Lettre de garantie
-          </a>
-          <a routerLink="/bons-commande/nouveau" [queryParams]="{ patientId: patient.id }" class="csu-btn csu-btn-primary">
-            <i class="bi bi-receipt-cutoff"></i> Bon de commande
-          </a>
           @if (patient && canModify(patient)) {
             <a [routerLink]="['/patients', patient.id, 'modifier']" class="csu-btn csu-btn-secondary">
               <i class="bi bi-pencil-fill"></i> Modifier la Fiche
@@ -176,79 +172,99 @@ import Swal from 'sweetalert2';
               <div class="row g-3">
                 <div class="col-12 col-md-6" *ngIf="patient.photoIdentiteRecto">
                   <span class="d-block small text-muted mb-2">Recto</span>
-                  <div class="identity-photo-wrapper">
+                  <div class="identity-photo-wrapper" (click)="openLightbox(patient.photoIdentiteRecto, 'Recto - Pièce identité')">
                     <img [src]="patient.photoIdentiteRecto" class="img-fluid rounded border shadow-sm" alt="Recto de la pièce" />
+                    <div class="photo-overlay"><i class="bi bi-zoom-in"></i> Agrandir</div>
                   </div>
                 </div>
                 <div class="col-12 col-md-6" *ngIf="patient.photoIdentiteVerso">
                   <span class="d-block small text-muted mb-2">Verso</span>
-                  <div class="identity-photo-wrapper">
+                  <div class="identity-photo-wrapper" (click)="openLightbox(patient.photoIdentiteVerso, 'Verso - Pièce identité')">
                     <img [src]="patient.photoIdentiteVerso" class="img-fluid rounded border shadow-sm" alt="Verso de la pièce" />
+                    <div class="photo-overlay"><i class="bi bi-zoom-in"></i> Agrandir</div>
                   </div>
                 </div>
               </div>
             </div>
 
-            <!-- Card: Enrolement Info -->
+            <!-- Card: Documents de prise en charge -->
             <div class="csu-card">
               <div class="csu-card-header">
                 <h3 class="csu-card-title">
-                  <i class="bi bi-shield-fill-check text-success"></i>
-                  Statut d'Enrôlement CSU
+                  <i class="bi bi-folder2-open text-csu-primary"></i>
+                  Documents de prise en charge
                 </h3>
               </div>
 
-              @if (enrolement) {
-                <div class="p-3 bg-light rounded d-flex flex-column gap-3">
-                  <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                      <span class="d-block small text-muted">Numéro de Bénéficiaire CSU</span>
-                      <span class="fw-bold text-csu-secondary">{{ enrolement.numeroBeneficiaire }}</span>
-                    </div>
-                    <div>
-                      <span class="badge" 
-                        [class.csu-badge-primary]="enrolement.statut === 'EN_COURS'" 
-                        [class.csu-badge-success]="enrolement.statut === 'VALIDE'" 
-                        [class.csu-badge-danger]="enrolement.statut === 'REJETE'"
-                        [class.csu-badge-warning]="enrolement.statut === 'SUSPENDU'">
-                        {{ enrolement.statut }}
-                      </span>
-                    </div>
+              <div class="doc-stats">
+                <!-- Lettre de garantie -->
+                <a [routerLink]="['/patients', patient.id, 'lettre-garantie']" class="doc-card lg">
+                  <div class="doc-ic"><i class="bi bi-shield-check"></i></div>
+                  <div class="doc-body">
+                    <span class="doc-num">{{ loadingLettres ? '…' : nbLettres }}</span>
+                    <span class="doc-lbl">Lettre(s) de garantie</span>
                   </div>
+                  <i class="bi bi-printer doc-go"></i>
+                </a>
 
-                  <div class="row g-3">
-                    <div class="col-6">
-                      <span class="d-block small text-muted">Date d'Enrôlement</span>
-                      <span class="fw-semibold">{{ enrolement.dateEnrolement | date:'dd/MM/yyyy' }}</span>
-                    </div>
-                    <div class="col-6">
-                      <span class="d-block small text-muted">Agent Enrôleur</span>
-                      <span>{{ enrolement.agentNom || 'Système' }}</span>
-                    </div>
+                <!-- Bons de commande -->
+                <a routerLink="/bons-commande/nouveau" [queryParams]="{ patientId: patient.id }" class="doc-card bc">
+                  <div class="doc-ic"><i class="bi bi-receipt-cutoff"></i></div>
+                  <div class="doc-body">
+                    <span class="doc-num">{{ loadingBons ? '…' : nbBons }}</span>
+                    <span class="doc-lbl">Bon(s) de commande</span>
                   </div>
+                  <i class="bi bi-plus-lg doc-go"></i>
+                </a>
+              </div>
 
-                  @if (enrolement.observations) {
-                    <div class="mt-2 border-top pt-2">
-                      <span class="d-block small text-muted">Observations</span>
-                      <p class="mb-0 small text-muted italic">"{{ enrolement.observations }}"</p>
-                    </div>
+              @if (!loadingLettres) {
+                @if (lettreActive) {
+                  <div class="lg-status active">
+                    <i class="bi bi-shield-fill-check"></i>
+                    Lettre <b>{{ lettreActive.reference }}</b> valable jusqu'au <b>{{ lettreActive.dateExpiration | date:'dd/MM/yyyy' }}</b> — réutilisable, ne pas réémettre.
+                  </div>
+                } @else {
+                  <div class="lg-status none">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    Aucune lettre de garantie active. <a [routerLink]="['/patients', patient.id, 'lettre-garantie']">Émettre une lettre</a> (valable 2 semaines).
+                  </div>
+                }
+              }
+
+              @if (bons.length > 0) {
+                <div class="bon-list">
+                  @for (b of bons; track b.id) {
+                    <a [routerLink]="['/bons-commande', b.id]" class="bon-row">
+                      <span class="bon-ref">{{ b.reference }}</span>
+                      <span class="bon-date">{{ b.dateCreation | date:'dd/MM/yyyy' }}</span>
+                      <span class="bon-pharm text-truncate">{{ b.pharmacieNom || '—' }}</span>
+                      <span class="bon-statut" [ngClass]="bonStatutClass(b.statut)">{{ bonStatutLabel(b.statut) }}</span>
+                    </a>
                   }
                 </div>
-              } @else {
-                <div class="csu-empty-state py-4">
-                  <i class="bi bi-shield-slash text-muted" style="font-size: 2.5rem;"></i>
-                  <h3>Non enrôlé</h3>
-                  <p class="mb-3">Ce patient n'est pas encore affilié au programme Couverture Sanitaire Universelle.</p>
-                  <a [routerLink]="['/enrolements/nouveau']" [queryParams]="{ patientId: patient.id }" class="csu-btn csu-btn-primary">
-                    <i class="bi bi-plus-circle-fill"></i> Procéder à l'enrôlement
-                  </a>
-                </div>
+              } @else if (!loadingBons) {
+                <p class="small text-muted mb-0 mt-2"><i class="bi bi-info-circle"></i> Aucun bon de commande émis pour ce patient.</p>
               }
             </div>
+
           </div>
         </div>
       </div>
     </div>
+
+    <!-- Lightbox Overlay -->
+    @if (lightboxOpen) {
+      <div class="lightbox-overlay" (click)="closeLightbox()" (keydown.escape)="closeLightbox()" tabindex="0">
+        <button class="lightbox-close" (click)="closeLightbox()">
+          <i class="bi bi-x-lg"></i>
+        </button>
+        <div class="lightbox-caption">{{ lightboxCaption }}</div>
+        <div class="lightbox-content" (click)="$event.stopPropagation()">
+          <img [src]="lightboxSrc" [alt]="lightboxCaption" />
+        </div>
+      </div>
+    }
   `,
   styles: [`
     .hover-primary:hover {
@@ -263,6 +279,8 @@ import Swal from 'sweetalert2';
       align-items: center;
       justify-content: center;
       padding: 6px;
+      cursor: pointer;
+      position: relative;
     }
     .identity-photo-wrapper img {
       max-height: 128px;
@@ -270,24 +288,220 @@ import Swal from 'sweetalert2';
       width: 100%;
       transition: transform 0.3s ease;
     }
-    .identity-photo-wrapper img:hover {
+    .identity-photo-wrapper:hover img {
       transform: scale(1.05);
+    }
+    .photo-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.45);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      border-radius: 12px;
+      opacity: 0;
+      transition: opacity 0.25s ease;
+    }
+    .identity-photo-wrapper:hover .photo-overlay {
+      opacity: 1;
+    }
+
+    /* Lightbox */
+    .lightbox-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: rgba(0, 0, 0, 0.88);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      animation: lightbox-in 0.25s ease;
+      cursor: zoom-out;
+    }
+    @keyframes lightbox-in {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    .lightbox-close {
+      position: absolute;
+      top: 16px;
+      right: 20px;
+      background: rgba(255,255,255,0.15);
+      border: none;
+      color: #fff;
+      font-size: 1.5rem;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      transition: background 0.2s ease, transform 0.2s ease;
+      z-index: 10000;
+    }
+    .lightbox-close:hover {
+      background: rgba(255,255,255,0.3);
+      transform: scale(1.1);
+    }
+    .lightbox-caption {
+      position: absolute;
+      top: 24px;
+      left: 24px;
+      color: rgba(255,255,255,0.8);
+      font-size: 0.9rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+    .lightbox-content {
+      max-width: 92vw;
+      max-height: 88vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: default;
+    }
+    .lightbox-content img {
+      max-width: 100%;
+      max-height: 85vh;
+      object-fit: contain;
+      border-radius: 8px;
+      box-shadow: 0 12px 60px rgba(0,0,0,0.5);
+    }
+
+    /* Documents de prise en charge */
+    .doc-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+    .doc-card { display: flex; align-items: center; gap: 11px; padding: 0.85rem; border-radius: 14px; text-decoration: none;
+      border: 1px solid rgba(0,0,0,0.06); background: var(--csu-bg, #f8fafc); position: relative; transition: transform 0.2s ease, box-shadow 0.2s ease; }
+    .doc-card:hover { transform: translateY(-2px); box-shadow: 0 8px 20px -12px rgba(0,0,0,0.25); }
+    .doc-ic { width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; font-size: 1.2rem; color: #fff; flex-shrink: 0; }
+    .doc-card.lg .doc-ic { background: linear-gradient(135deg,#00875A,#00C67B); }
+    .doc-card.bc .doc-ic { background: linear-gradient(135deg,#00838F,#26C6DA); }
+    .doc-body { display: flex; flex-direction: column; line-height: 1.1; }
+    .doc-num { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 1.5rem; color: var(--csu-text); }
+    .doc-lbl { font-size: 0.74rem; color: var(--csu-text-muted); font-weight: 600; }
+    .doc-go { position: absolute; top: 0.7rem; right: 0.8rem; color: var(--csu-text-muted); font-size: 0.9rem; }
+
+    .lg-status { display: flex; align-items: center; gap: 8px; margin-top: 0.85rem; padding: 8px 12px; border-radius: 10px; font-size: 0.8rem; line-height: 1.35; }
+    .lg-status.active { background: rgba(67,160,71,0.1); color: #1B5E20; }
+    .lg-status.none { background: rgba(245,124,0,0.1); color: #E65100; }
+    .lg-status a { font-weight: 700; color: inherit; text-decoration: underline; }
+
+    .bon-list { display: flex; flex-direction: column; margin-top: 0.9rem; }
+    .bon-row { display: grid; grid-template-columns: 1.4fr 1fr 1.6fr auto; align-items: center; gap: 8px; padding: 8px 6px;
+      border-bottom: 1px solid rgba(0,0,0,0.05); text-decoration: none; color: inherit; transition: background 0.15s ease; }
+    .bon-row:last-child { border-bottom: none; }
+    .bon-row:hover { background: var(--csu-bg, #f6f8fa); }
+    .bon-ref { font-family: monospace; font-weight: 700; font-size: 0.8rem; color: var(--csu-primary); }
+    .bon-date { font-size: 0.78rem; color: var(--csu-text-muted); }
+    .bon-pharm { font-size: 0.8rem; }
+    .bon-statut { font-size: 0.68rem; font-weight: 700; padding: 2px 8px; border-radius: 12px; white-space: nowrap; }
+    .bon-statut.st-attente { background: rgba(245,124,0,0.12); color: #E65100; }
+    .bon-statut.st-delivre { background: rgba(67,160,71,0.12); color: #2E7D32; }
+    .bon-statut.st-annule { background: rgba(229,57,53,0.1); color: #C62828; }
+
+    @media (max-width: 576px) {
+      .doc-stats { grid-template-columns: 1fr; }
+      .bon-row { grid-template-columns: 1fr auto; }
+      .bon-date, .bon-pharm { display: none; }
     }
   `]
 })
 export class PatientDetailComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private patientService = inject(PatientService);
-  private enrolementService = inject(EnrolementService);
   private authService = inject(AuthService);
+  private bonCommandeService = inject(BonCommandeService);
+  private lettreService = inject(LettreGarantieService);
 
   patient?: Patient;
-  enrolement?: Enrolement;
   specInfo: { label: string; value: string; full?: boolean }[] = [];
+
+  // Lightbox state
+  lightboxOpen = false;
+  lightboxSrc = '';
+  lightboxCaption = '';
+
+  bons: BonCommande[] = [];
+  nbBons = 0;
+  loadingBons = true;
+
+  lettres: LettreGarantie[] = [];
+  nbLettres = 0;
+  lettreActive: LettreGarantie | null = null;
+  loadingLettres = true;
 
   ngOnInit(): void {
     const id = +this.route.snapshot.paramMap.get('id')!;
     this.loadPatientDetail(id);
+    this.loadBons(id);
+    this.loadLettres(id);
+  }
+
+  openLightbox(src: string, caption: string): void {
+    this.lightboxSrc = src;
+    this.lightboxCaption = caption;
+    this.lightboxOpen = true;
+    // Listen for Escape key
+    document.addEventListener('keydown', this._escHandler);
+  }
+
+  closeLightbox(): void {
+    this.lightboxOpen = false;
+    this.lightboxSrc = '';
+    this.lightboxCaption = '';
+    document.removeEventListener('keydown', this._escHandler);
+  }
+
+  private _escHandler = (e: KeyboardEvent) => {
+    if (e.key === 'Escape') this.closeLightbox();
+  };
+
+  loadLettres(patientId: number): void {
+    this.loadingLettres = true;
+    this.lettreService.getByPatient(patientId).subscribe({
+      next: (list) => {
+        this.lettres = list;
+        this.nbLettres = list.length;
+        const today = new Date().setHours(0, 0, 0, 0);
+        this.lettreActive = list.find(l => new Date(l.dateExpiration).getTime() >= today) || null;
+        this.loadingLettres = false;
+      },
+      error: () => {
+        this.lettres = [];
+        this.nbLettres = 0;
+        this.lettreActive = null;
+        this.loadingLettres = false;
+      }
+    });
+  }
+
+  loadBons(patientId: number): void {
+    this.loadingBons = true;
+    this.bonCommandeService.getBonsByPatient(patientId).subscribe({
+      next: (list) => {
+        this.bons = list;
+        this.nbBons = list.length;
+        this.loadingBons = false;
+      },
+      error: () => {
+        this.bons = [];
+        this.nbBons = 0;
+        this.loadingBons = false;
+      }
+    });
+  }
+
+  bonStatutLabel(s: string): string {
+    return { EN_ATTENTE: 'En attente', DELIVRE: 'Délivré', ANNULE: 'Annulé' }[s] || s;
+  }
+
+  bonStatutClass(s: string): string {
+    return { EN_ATTENTE: 'st-attente', DELIVRE: 'st-delivre', ANNULE: 'st-annule' }[s] || 'st-attente';
   }
 
   loadPatientDetail(id: number): void {
@@ -295,24 +509,11 @@ export class PatientDetailComponent implements OnInit {
       next: (data) => {
         this.patient = data;
         this.specInfo = this.specificInfo(data);
-        this.checkEnrolement(id);
       },
       error: (err) => {
         console.error('Erreur lors du chargement du patient:', err);
         this.patient = undefined;
         Swal.fire('Erreur', 'Impossible de charger les détails du patient.', 'error');
-      }
-    });
-  }
-
-  checkEnrolement(patientId: number): void {
-    this.enrolementService.getEnrolements(0, 10, undefined, this.patient?.numeroDossier).subscribe({
-      next: (res) => {
-        this.enrolement = res.content.find(e => e.patientId === patientId);
-      },
-      error: (err) => {
-        console.error('Erreur lors du chargement de l\'enrôlement:', err);
-        this.enrolement = undefined;
       }
     });
   }

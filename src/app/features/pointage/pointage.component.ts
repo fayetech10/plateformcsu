@@ -326,6 +326,14 @@ export class PointageComponent implements OnInit, OnDestroy {
     this.pointageService.pointerArrivee(pos.coords || undefined).subscribe({
       next: (res) => {
         this.busy = false;
+        // Mise à jour immédiate du statut local pour passer à « Pointer mon départ » sans recharger
+        this.statut = {
+          date: this.statut?.date || new Date().toISOString().substring(0, 10),
+          aPointeArrivee: true,
+          aPointeDepart: false,
+          heureArrivee: res.heureArrivee,
+          heureDepart: null
+        };
         this.afficherSucces(res, res.heureArrivee, 'Arrivée');
         this.loadStatut(); this.loadHistory();
       },
@@ -342,6 +350,14 @@ export class PointageComponent implements OnInit, OnDestroy {
     this.pointageService.pointerDepart(pos.coords || undefined).subscribe({
       next: (res) => {
         this.busy = false;
+        // Mise à jour immédiate du statut local pour afficher « Présence complète » sans recharger
+        this.statut = {
+          date: this.statut?.date || new Date().toISOString().substring(0, 10),
+          aPointeArrivee: true,
+          aPointeDepart: true,
+          heureArrivee: this.statut?.heureArrivee || null,
+          heureDepart: res.heureDepart
+        };
         this.afficherSucces(res, res.heureDepart, 'Départ');
         this.loadStatut(); this.loadHistory();
       },
