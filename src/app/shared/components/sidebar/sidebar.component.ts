@@ -74,6 +74,11 @@ import { AuthService } from '../../../core/services/auth.service';
         <div class="csu-sidebar-section">
           <div class="csu-sidebar-section-title" *ngIf="!collapsed">Statistiques</div>
 
+          <a class="csu-sidebar-link" *ngIf="isAdmin" routerLink="/admin/activite" routerLinkActive="active">
+            <i class="bi bi-activity"></i>
+            <span *ngIf="!collapsed">Activité en direct</span>
+          </a>
+
           <a class="csu-sidebar-link" *ngIf="isAdmin" routerLink="/statistiques" routerLinkActive="active">
             <i class="bi bi-bar-chart-line"></i>
             <span *ngIf="!collapsed">Statistiques</span>

@@ -24,6 +24,7 @@ import { PharmacieFormComponent } from './features/admin/pharmacies/pharmacie-fo
 import { BonCommandeListComponent } from './features/bons-commande/bon-commande-list.component';
 import { BonCommandeFormComponent } from './features/bons-commande/bon-commande-form.component';
 import { BonCommandeDetailComponent } from './features/bons-commande/bon-commande-detail.component';
+import { ActiviteLiveComponent } from './features/admin/activite-live/activite-live.component';
 import { DashboardHomeComponent } from './features/dashboard/dashboard-home.component';
 import { BureauDetailComponent } from './features/admin/bureaux/bureau-detail.component';
 import { PointageComponent } from './features/pointage/pointage.component';
@@ -85,6 +86,9 @@ export const routes: Routes = [
 
       // Statistiques (ADMIN)
       { path: 'statistiques', component: StatistiquesComponent, canActivate: [roleGuard], data: { roles: ['ADMIN'] } },
+
+      // Activité en temps réel (ADMIN / SUPERVISEUR)
+      { path: 'admin/activite', component: ActiviteLiveComponent, canActivate: [roleGuard], data: { roles: ['ADMIN', 'SUPERVISEUR'] } },
       
       // Admin (Only ADMIN role)
       // L'ancienne URL /admin redirige vers le tableau de bord unifié

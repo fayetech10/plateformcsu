@@ -1,14 +1,14 @@
-import { Component, Input, Output, EventEmitter, inject, OnInit, OnDestroy } from '@angular/core';
+import { Component, Input, Output, EventEmitter, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../../core/services/auth.service';
-import { PermissionService } from '../../../core/services/permission.service';
 import { Router } from '@angular/router';
 import Swal from 'sweetalert2';
+import { NotificationBellComponent } from '../notification-bell/notification-bell.component';
 
 @Component({
   selector: 'app-navbar',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, NotificationBellComponent],
   template: `
     <nav class="csu-navbar" [class.expanded]="isSidebarCollapsed">
       <div class="csu-navbar-left">
@@ -30,15 +30,9 @@ import Swal from 'sweetalert2';
       </div>
 
       <div class="csu-navbar-right">
-        <!-- Notifications : demandes de permission (Admin) -->
-        @if (isAdmin) {
-          <button class="notif-btn d-none d-lg-flex" (click)="goToPermissions()"
-                  [title]="nbEnAttente > 0 ? (nbEnAttente + ' demande(s) de permission en attente') : 'Aucune demande en attente'">
-            <i class="bi bi-bell"></i>
-            @if (nbEnAttente > 0) {
-              <span class="notif-badge">{{ nbEnAttente > 99 ? '99+' : nbEnAttente }}</span>
-            }
-          </button>
+        <!-- Notifications d'activité en temps réel (Admin / Superviseur) -->
+        @if (isAdmin || isSuperviseur) {
+          <app-notification-bell class="d-none d-lg-block"></app-notification-bell>
         }
 
         <div class="csu-navbar-user dropdown">
@@ -98,17 +92,12 @@ import Swal from 'sweetalert2';
     @keyframes notif-pop { from { transform: scale(0); } to { transform: scale(1); } }
   `]
 })
-export class NavbarComponent implements OnInit, OnDestroy {
+export class NavbarComponent {
   private authService = inject(AuthService);
-  private permissionService = inject(PermissionService);
   private router = inject(Router);
 
   @Output() sidebarToggle = new EventEmitter<void>();
   @Input() isSidebarCollapsed = false;
-
-  nbEnAttente = 0;
-  private pollTimer?: any;
-  private refreshHandler = () => this.refreshCount();
 
   get user() {
     return this.authService.currentUserValue;
@@ -118,37 +107,12 @@ export class NavbarComponent implements OnInit, OnDestroy {
     return this.authService.isAdmin();
   }
 
-  ngOnInit(): void {
-    if (this.isAdmin) {
-      this.refreshCount();
-      // Rafraîchissement périodique léger
-      this.pollTimer = setInterval(() => this.refreshCount(), 60000);
-      // Mise à jour immédiate après traitement d'une demande dans le dashboard
-      window.addEventListener('csu:permissions-updated', this.refreshHandler);
-    }
-  }
-
-  ngOnDestroy(): void {
-    if (this.pollTimer) clearInterval(this.pollTimer);
-    window.removeEventListener('csu:permissions-updated', this.refreshHandler);
-  }
-
-  private refreshCount(): void {
-    this.permissionService.countAttente().subscribe({
-      next: (r) => (this.nbEnAttente = r.enAttente),
-      error: () => {}
-    });
+  get isSuperviseur(): boolean {
+    return this.authService.isSuperviseur();
   }
 
   goChangePassword(): void {
     this.router.navigate(['/changer-mot-de-passe']);
-  }
-
-  goToPermissions(): void {
-    this.router.navigate(['/dashboard'], { queryParams: { focus: 'permissions' } }).then(() => {
-      // Cas où le dashboard est déjà affiché : signaler le focus
-      window.dispatchEvent(new CustomEvent('csu:focus-permissions'));
-    });
   }
 
   get initials(): string {

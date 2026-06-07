@@ -1,16 +1,19 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { debounceTime } from 'rxjs/operators';
 import { RapportService } from '../../core/services/rapport.service';
 import { BureauService } from '../../core/services/bureau.service';
 import { AuthService } from '../../core/services/auth.service';
 import { BureauCsu } from '../../core/models/bureau.model';
+import { RapportSummary } from '../../core/models/rapport-summary.model';
+import { RapportSummaryViewComponent } from './rapport-summary-view.component';
 import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-rapports',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, RapportSummaryViewComponent],
   template: `
     <div class="container-fluid animate-fade-in">
       <!-- Header -->
@@ -36,8 +39,18 @@ import Swal from 'sweetalert2';
             </div>
 
             <form [formGroup]="rapportForm" (ngSubmit)="$event.preventDefault()">
+              <!-- Raccourcis de période -->
+              <div class="preset-row mb-3">
+                <button type="button" class="preset" [class.active]="activePreset === 'today'" (click)="setPreset('today')">Aujourd'hui</button>
+                <button type="button" class="preset" [class.active]="activePreset === '7d'" (click)="setPreset('7d')">7 jours</button>
+                <button type="button" class="preset" [class.active]="activePreset === 'month'" (click)="setPreset('month')">Ce mois</button>
+                <button type="button" class="preset" [class.active]="activePreset === '30d'" (click)="setPreset('30d')">30 jours</button>
+                <button type="button" class="preset" [class.active]="activePreset === 'quarter'" (click)="setPreset('quarter')">Trimestre</button>
+                <button type="button" class="preset" [class.active]="activePreset === 'year'" (click)="setPreset('year')">Année</button>
+              </div>
+
               <div class="row g-3 mb-4">
-                
+
                 <!-- Start Date -->
                 <div class="col-12 col-md-6">
                   <div class="csu-form-group">
@@ -192,8 +205,34 @@ import Swal from 'sweetalert2';
           </div>
         </div>
       </div>
+
+      <!-- Aperçu de la synthèse (période sélectionnée) -->
+      <div class="csu-card mt-4">
+        <div class="csu-card-header">
+          <h3 class="csu-card-title">
+            <i class="bi bi-clipboard-data text-csu-primary"></i>
+            Aperçu de la synthèse
+            @if (summary) { <span class="period-tag">{{ summary.bureauNom }} · {{ rapportForm.value.startDate }} → {{ rapportForm.value.endDate }}</span> }
+          </h3>
+          <button type="button" class="csu-btn csu-btn-light btn-sm" (click)="loadSummary()" [disabled]="loadingSummary">
+            <i class="bi bi-arrow-clockwise" [class.spin]="loadingSummary"></i> Actualiser
+          </button>
+        </div>
+        <app-rapport-summary-view [summary]="summary" [loading]="loadingSummary"></app-rapport-summary-view>
+      </div>
     </div>
-  `
+  `,
+  styles: [`
+    .preset-row { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+    .preset { background: #fff; border: 1px solid var(--csu-border-light, rgba(0,0,0,0.1)); color: var(--csu-text-muted);
+      font-size: 0.78rem; font-weight: 600; padding: 5px 12px; border-radius: 20px; cursor: pointer; transition: all 0.15s ease; }
+    .preset:hover { border-color: var(--csu-primary); color: var(--csu-primary); }
+    .preset.active { background: var(--csu-primary); border-color: var(--csu-primary); color: #fff; }
+    .period-tag { font-size: 0.7rem; font-weight: 600; color: var(--csu-text-muted); background: var(--csu-bg, #f1f5f9); padding: 2px 9px; border-radius: 12px; margin-left: 8px; }
+    .btn-sm { padding: 0.3rem 0.6rem; font-size: 0.8rem; }
+    .spin { display: inline-block; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  `]
 })
 export class RapportsComponent implements OnInit {
   private fb = inject(FormBuilder);

@@ -14,457 +14,196 @@ import { ActivitesAVenirComponent } from '../activites/activites-a-venir.compone
   standalone: true,
   imports: [CommonModule, RouterLink, PointageReminderComponent, AgentNotificationsComponent, ActivitesAVenirComponent],
   template: `
-    <div class="container-fluid animate-fade-in">
-      <!-- Rappel de pointage (visible dès l'entrée sur la plateforme) -->
+    <div class="dash animate-fade-in">
+
+      <!-- Rappel de pointage (visible dès l'entrée) -->
       <app-pointage-reminder />
 
-      <!-- Header personnalisé -->
-      <div class="csu-page-header">
-        <div>
-          <h1 class="csu-page-title">{{ greeting }}, {{ prenom }} 👋</h1>
-          <p class="csu-page-subtitle">{{ today | date:'EEEE d MMMM y' }} — voici votre activité du jour</p>
-        </div>
-        <div class="d-flex gap-2 hide-on-mobile">
-          <!-- Bouton masqué en mobile : la création passe par le FAB du bottom-nav -->
-          <button (click)="triggerNewAction()" class="csu-btn csu-btn-primary">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="12" y1="5" x2="12" y2="19"/>
-              <line x1="5" y1="12" x2="19" y2="12"/>
-            </svg>
-            Nouveau
-          </button>
-        </div>
-      </div>
-
-      <!-- Actions concernant l'agent (placée en tête pour visibilité immédiate) -->
-      <div class="mb-4">
-        <app-agent-notifications />
-      </div>
-
-      <!-- KPI Grid — Modern Minimal Cards -->
-      <div class="kpi-grid-container">
-        <div class="kpi-grid">
-          <!-- Card: Patients -->
-        <div class="kpi-card animate-fade-in stagger-1" routerLink="/patients">
-          <div class="kpi-icon-wrap patients">
-            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-              <circle cx="9" cy="7" r="4"/>
-              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-              <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-            </svg>
-          </div>
-          <div class="kpi-content">
-            <span class="kpi-value">{{ stats?.totalPatients || 0 }}</span>
-            <span class="kpi-label">Patients</span>
-          </div>
-          <div class="kpi-trend up">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
-              <polyline points="17 6 23 6 23 12"/>
-            </svg>
-            <span>+12.5%</span>
+      <!-- ════════ HERO ════════ -->
+      <section class="hero">
+        <div class="hero-glow"></div>
+        <div class="hero-main">
+          <span class="hero-chip"><span class="dot-live"></span> Espace agent</span>
+          <h1>{{ greeting }}, {{ prenom }} 👋</h1>
+          <p class="hero-date">{{ today | date:'EEEE d MMMM y' }}</p>
+          <p class="hero-summary">{{ resume }}</p>
+          <div class="hero-actions">
+            <button (click)="triggerNewAction()" class="hero-btn primary"><i class="bi bi-plus-lg"></i> Nouvelle action</button>
+            <a routerLink="/patients" class="hero-btn ghost"><i class="bi bi-people"></i> Mes patients</a>
           </div>
         </div>
 
-        <!-- Card: Bénéficiaires -->
-        <div class="kpi-card animate-fade-in stagger-2" routerLink="/enrolements">
-          <div class="kpi-icon-wrap beneficiaires">
-            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
-              <circle cx="9" cy="7" r="4"/>
-              <polyline points="16 11 18 13 22 9"/>
-            </svg>
+        <div class="hero-today">
+          <div class="ht-num">{{ stats?.activitesDuJour?.length || 0 }}</div>
+          <div class="ht-lbl">activité(s)<br>aujourd'hui</div>
+        </div>
+      </section>
+
+      <!-- Notifications agent -->
+      <app-agent-notifications />
+
+      <!-- ════════ BENTO KPI ════════ -->
+      <section class="bento">
+        <div class="kpi accent-blue" routerLink="/patients">
+          <div class="kpi-top"><div class="kpi-ic"><i class="bi bi-people-fill"></i></div><i class="bi bi-arrow-up-right kpi-go"></i></div>
+          <div class="kpi-val">{{ stats?.totalPatients || 0 }}</div>
+          <div class="kpi-lbl">Patients</div>
+          <div class="kpi-foot subtle">Dossiers enregistrés</div>
+        </div>
+
+        <div class="kpi accent-green" routerLink="/enrolements">
+          <div class="kpi-top"><div class="kpi-ic"><i class="bi bi-person-check-fill"></i></div><i class="bi bi-arrow-up-right kpi-go"></i></div>
+          <div class="kpi-val">{{ stats?.totalBeneficiaires || 0 }}</div>
+          <div class="kpi-lbl">Bénéficiaires</div>
+          <div class="kpi-foot subtle">Enrôlés à la CSU</div>
+        </div>
+
+        <div class="kpi accent-purple" routerLink="/activites">
+          <div class="kpi-top"><div class="kpi-ic"><i class="bi bi-calendar2-event-fill"></i></div><i class="bi bi-arrow-up-right kpi-go"></i></div>
+          <div class="kpi-val">{{ stats?.totalActivites || 0 }}</div>
+          <div class="kpi-lbl">Activités</div>
+          <div class="kpi-foot subtle">{{ stats?.activitesDuJour?.length || 0 }} aujourd'hui</div>
+        </div>
+
+        <div class="kpi accent-orange" routerLink="/constats">
+          <div class="kpi-top"><div class="kpi-ic"><i class="bi bi-clipboard-check-fill"></i></div><i class="bi bi-arrow-up-right kpi-go"></i></div>
+          <div class="kpi-val">{{ stats?.totalConstats || 0 }}</div>
+          <div class="kpi-lbl">Constats</div>
+          <div class="kpi-foot subtle">Signalements suivis</div>
+        </div>
+      </section>
+
+      <!-- ════════ CHART + ACTIVITÉS DU JOUR ════════ -->
+      <div class="grid-2">
+        <div class="panel">
+          <div class="panel-head">
+            <h3><i class="bi bi-graph-up-arrow"></i> Activité d'enrôlement mensuelle</h3>
+            <span class="tag-year">Année courante</span>
           </div>
-          <div class="kpi-content">
-            <span class="kpi-value">{{ stats?.totalBeneficiaires || 0 }}</span>
-            <span class="kpi-label">Bénéficiaires</span>
-          </div>
-          <div class="kpi-trend up">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
-              <polyline points="17 6 23 6 23 12"/>
-            </svg>
-            <span>+8.2%</span>
+          <div style="height: 300px; position: relative;">
+            <canvas #monthlyChartCanvas></canvas>
           </div>
         </div>
 
-        <!-- Card: Activités -->
-        <div class="kpi-card animate-fade-in stagger-3" routerLink="/activites">
-          <div class="kpi-icon-wrap activites">
-            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-              <line x1="16" y1="2" x2="16" y2="6"/>
-              <line x1="8" y1="2" x2="8" y2="6"/>
-              <line x1="3" y1="10" x2="21" y2="10"/>
-            </svg>
+        <div class="panel">
+          <div class="panel-head">
+            <h3><i class="bi bi-clock-fill"></i> Activités du jour</h3>
+            <a routerLink="/activites" class="link">Tout voir</a>
           </div>
-          <div class="kpi-content">
-            <span class="kpi-value">{{ stats?.totalActivites || 0 }}</span>
-            <span class="kpi-label">Activités</span>
-          </div>
-          <div class="kpi-trend up">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
-              <polyline points="17 6 23 6 23 12"/>
-            </svg>
-            <span>+5 aujourd'hui</span>
-          </div>
-        </div>
 
-        <!-- Card: Constats -->
-        <div class="kpi-card animate-fade-in stagger-4" routerLink="/constats">
-          <div class="kpi-icon-wrap constats">
-            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-              <polyline points="14 2 14 8 20 8"/>
-              <line x1="16" y1="13" x2="8" y2="13"/>
-              <line x1="16" y1="17" x2="8" y2="17"/>
-              <polyline points="10 9 9 9 8 9"/>
-            </svg>
-          </div>
-          <div class="kpi-content">
-            <span class="kpi-value">{{ stats?.totalConstats || 0 }}</span>
-            <span class="kpi-label">Constats</span>
-          </div>
-          <div class="kpi-trend down">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/>
-              <polyline points="17 18 23 18 23 12"/>
-            </svg>
-            <span>-3 résolus</span>
-          </div>
-        </div>
-      </div>
-      </div>
-
-      <!-- Graphiques & Listes du jour -->
-      <div class="row g-4 mb-4">
-        <!-- Chart: Evolution Mensuelle -->
-        <div class="col-12 col-lg-8">
-          <div class="csu-card h-100">
-            <div class="csu-card-header">
-              <h3 class="csu-card-title">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--csu-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-                </svg>
-                Activité d'Enrôlement Mensuelle
-              </h3>
-              <span class="badge bg-csu-primary-light text-csu-primary fw-semibold">Année courante</span>
-            </div>
-            <div style="height: 300px; position: relative;">
-              <canvas #monthlyChartCanvas></canvas>
-            </div>
-          </div>
-        </div>
-
-        <!-- List: Activités Récentes du Jour -->
-        <div class="col-12 col-lg-4">
-          <div class="csu-card h-100">
-            <div class="csu-card-header">
-              <h3 class="csu-card-title">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--csu-secondary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <circle cx="12" cy="12" r="10"/>
-                  <polyline points="12 6 12 12 16 14"/>
-                </svg>
-                Activités du Jour
-              </h3>
-              <a routerLink="/activites" class="small text-csu-primary fw-semibold text-decoration-none">
-                Tout voir
-              </a>
-            </div>
-
-            @if (stats?.activitesDuJour && stats!.activitesDuJour.length > 0) {
-              <div class="d-flex flex-column gap-3">
-                @for (act of stats?.activitesDuJour; track act.id) {
-                  <div class="activity-item">
-                    <div class="activity-dot"></div>
-                    <div class="flex-grow-1 min-w-0">
-                      <h4 class="small fw-bold mb-0 text-truncate">{{ act.typeActivite }}</h4>
-                      <p class="text-muted small mb-0 text-truncate">{{ act.description }}</p>
-                    </div>
-                    <div class="text-end" style="flex-shrink: 0;">
-                      <span class="activity-time">{{ act.date }}</span>
-                    </div>
+          @if (stats?.activitesDuJour && stats!.activitesDuJour.length > 0) {
+            <div class="acts">
+              @for (act of stats?.activitesDuJour; track act.id) {
+                <div class="act-item">
+                  <div class="act-dot"></div>
+                  <div class="flex-grow-1 min-w-0">
+                    <h4 class="act-title text-truncate">{{ act.typeActivite }}</h4>
+                    <p class="act-desc text-truncate">{{ act.description }}</p>
                   </div>
-                }
-              </div>
-            } @else {
-              <div class="csu-empty-state">
-                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.3; color: var(--csu-text-muted)">
-                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                  <line x1="16" y1="2" x2="16" y2="6"/>
-                  <line x1="8" y1="2" x2="8" y2="6"/>
-                  <line x1="3" y1="10" x2="21" y2="10"/>
-                  <line x1="10" y1="14" x2="14" y2="18"/>
-                  <line x1="14" y1="14" x2="10" y2="18"/>
-                </svg>
-                <h3>Aucune activité</h3>
-                <p>Aucune activité enregistrée aujourd'hui.</p>
-              </div>
-            }
-          </div>
+                  <span class="act-time">{{ act.date }}</span>
+                </div>
+              }
+            </div>
+          } @else {
+            <div class="csu-empty-state">
+              <i class="bi bi-calendar-x" style="font-size:2.5rem;opacity:0.3;"></i>
+              <h3>Aucune activité</h3>
+              <p>Aucune activité enregistrée aujourd'hui.</p>
+            </div>
+          }
         </div>
       </div>
 
-
-      <div class="row g-4 mb-4">
-        <!-- Prochaines activités planifiées -->
-        <div class="col-12">
-          <app-activites-a-venir />
-        </div>
-      </div>
+      <!-- Prochaines activités planifiées -->
+      <app-activites-a-venir />
     </div>
   `,
   styles: [`
-    /* ── KPI Grid ── */
-    .kpi-grid-container {
-      width: 100%;
-      overflow-x: auto;
-      padding-bottom: 0.5rem;
-      margin-bottom: 1rem;
-      -webkit-overflow-scrolling: touch;
-    }
-    .kpi-grid-container::-webkit-scrollbar {
-      height: 6px;
-    }
-    .kpi-grid-container::-webkit-scrollbar-thumb {
-      background-color: rgba(0,0,0,0.1);
-      border-radius: 4px;
-    }
+    .dash { display: flex; flex-direction: column; gap: 1.25rem; padding-bottom: 1rem; }
 
-    .kpi-grid {
-      display: flex;
-      flex-wrap: nowrap;
-      gap: 1rem;
-      min-width: min-content;
+    /* ════════ HERO ════════ */
+    .hero {
+      position: relative; overflow: hidden; border-radius: 24px; padding: 1.75rem 2rem;
+      background: linear-gradient(135deg, #016b48 0%, #00875A 42%, #00b074 78%, #12a7b8 130%);
+      color: #fff; display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; flex-wrap: wrap;
+      box-shadow: 0 18px 40px -18px rgba(0,135,90,0.55);
     }
+    .hero-glow { position: absolute; inset: 0; background:
+      radial-gradient(620px 320px at 88% -30%, rgba(255,255,255,0.22), transparent 60%),
+      radial-gradient(420px 260px at 8% 130%, rgba(255,255,255,0.12), transparent 60%);
+      pointer-events: none; }
+    .hero-main { position: relative; z-index: 1; flex: 1 1 320px; }
+    .hero-chip { display: inline-flex; align-items: center; gap: 7px; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em;
+      text-transform: uppercase; background: rgba(255,255,255,0.16); padding: 5px 12px; border-radius: 30px; backdrop-filter: blur(6px); }
+    .dot-live { width: 7px; height: 7px; border-radius: 50%; background: #B9F6CA; animation: pulse 1.8s infinite; }
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(185,246,202,0.7); } 70% { box-shadow: 0 0 0 8px rgba(185,246,202,0); } 100% { box-shadow: 0 0 0 0 rgba(185,246,202,0); } }
+    .hero h1 { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: clamp(1.5rem, 3vw, 2.1rem); margin: 0.7rem 0 0.2rem; letter-spacing: -0.02em; }
+    .hero-date { text-transform: capitalize; opacity: 0.9; font-weight: 600; margin: 0; font-size: 0.9rem; }
+    .hero-summary { margin: 0.7rem 0 0; font-size: 0.95rem; opacity: 0.95; max-width: 540px; line-height: 1.45; }
+    .hero-actions { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-top: 1rem; }
+    .hero-btn { display: inline-flex; align-items: center; gap: 7px; font-weight: 700; font-size: 0.85rem; padding: 9px 16px; border-radius: 12px;
+      text-decoration: none; border: none; cursor: pointer; transition: transform 0.2s ease, background 0.2s ease; }
+    .hero-btn.primary { background: #fff; color: #00875A; }
+    .hero-btn.primary:hover { transform: translateY(-2px); }
+    .hero-btn.ghost { background: rgba(255,255,255,0.15); color: #fff; border: 1px solid rgba(255,255,255,0.3); }
+    .hero-btn.ghost:hover { background: rgba(255,255,255,0.25); }
 
-    .kpi-card {
-      flex: 1;
-      min-width: 200px;
-      background: #fff;
-      border-radius: 16px;
-      padding: 1rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
-      border: 1px solid rgba(0, 0, 0, 0.04);
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      cursor: pointer;
-      position: relative;
-      overflow: hidden;
-      min-width: 0;
-    }
+    .hero-today { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      width: 132px; height: 132px; border-radius: 24px; background: rgba(255,255,255,0.14); border: 1px solid rgba(255,255,255,0.22); backdrop-filter: blur(6px); flex-shrink: 0; }
+    .ht-num { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 2.6rem; line-height: 1; }
+    .ht-lbl { font-size: 0.74rem; opacity: 0.9; font-weight: 600; text-align: center; margin-top: 4px; }
 
-    .kpi-card::after {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: linear-gradient(135deg, transparent 60%, rgba(0, 0, 0, 0.02));
-      pointer-events: none;
-    }
+    /* ════════ BENTO KPI ════════ */
+    .bento { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
+    .kpi { background: #fff; border: 1px solid rgba(0,0,0,0.05); border-radius: 18px; padding: 1.2rem; cursor: pointer;
+      position: relative; overflow: hidden; transition: transform 0.25s ease, box-shadow 0.25s ease; }
+    .kpi::before { content: ''; position: absolute; top: -40%; right: -25%; width: 150px; height: 150px; border-radius: 50%; opacity: 0.1; }
+    .kpi:hover { transform: translateY(-4px); box-shadow: 0 16px 32px -16px rgba(0,0,0,0.25); }
+    .kpi-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.9rem; }
+    .kpi-ic { width: 46px; height: 46px; border-radius: 13px; display: grid; place-items: center; font-size: 1.3rem; color: #fff; }
+    .kpi-go { color: var(--csu-text-muted); opacity: 0; transform: translate(-4px,4px); transition: all 0.25s ease; }
+    .kpi:hover .kpi-go { opacity: 1; transform: translate(0,0); }
+    .kpi-val { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 2rem; line-height: 1; letter-spacing: -0.02em; }
+    .kpi-lbl { font-size: 0.85rem; color: var(--csu-text-muted); font-weight: 600; margin-top: 4px; }
+    .kpi-foot { font-size: 0.76rem; font-weight: 600; color: var(--csu-text-muted); margin-top: 0.55rem; }
+    .kpi-foot.subtle { margin-top: 0.8rem; }
+    .accent-blue   .kpi-ic { background: linear-gradient(135deg,#1565C0,#42A5F5); } .accent-blue::before { background:#1565C0; }
+    .accent-green  .kpi-ic { background: linear-gradient(135deg,#00875A,#00C67B); } .accent-green::before { background:#00875A; }
+    .accent-purple .kpi-ic { background: linear-gradient(135deg,#7B1FA2,#AB47BC); } .accent-purple::before { background:#7B1FA2; }
+    .accent-orange .kpi-ic { background: linear-gradient(135deg,#F57C00,#FFB74D); } .accent-orange::before { background:#F57C00; }
 
-    .kpi-card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-    }
+    /* ════════ PANELS ════════ */
+    .panel { background: #fff; border: 1px solid rgba(0,0,0,0.05); border-radius: 18px; padding: 1.3rem 1.4rem; }
+    .panel-head { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; margin-bottom: 1.1rem; flex-wrap: wrap; }
+    .panel-head h3 { display: flex; align-items: center; gap: 9px; font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 1.05rem; margin: 0; }
+    .panel-head h3 i { color: var(--csu-primary); }
+    .panel-head .link { font-size: 0.82rem; font-weight: 700; color: var(--csu-primary); text-decoration: none; }
+    .tag-year { font-size: 0.74rem; font-weight: 700; padding: 4px 11px; border-radius: 20px; background: rgba(0,135,90,0.1); color: var(--csu-primary); }
+    .grid-2 { display: grid; grid-template-columns: 7fr 5fr; gap: 1.25rem; }
 
-    .kpi-icon-wrap {
-      width: 44px;
-      height: 44px;
-      border-radius: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: transform 0.3s ease;
-    }
+    /* Activités du jour */
+    .acts { display: flex; flex-direction: column; gap: 0.4rem; }
+    .act-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 12px; transition: background 0.2s ease; }
+    .act-item:hover { background: var(--csu-bg, #f6f8fa); }
+    .act-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--csu-primary); flex-shrink: 0; box-shadow: 0 0 0 3px rgba(0,135,90,0.15); }
+    .act-title { font-size: 0.85rem; font-weight: 700; margin: 0; }
+    .act-desc { font-size: 0.78rem; color: var(--csu-text-muted); margin: 0; }
+    .act-time { font-size: 0.74rem; font-weight: 700; color: var(--csu-text-muted); background: var(--csu-bg, #f1f5f9); padding: 4px 9px; border-radius: 8px; white-space: nowrap; flex-shrink: 0; }
 
-    .kpi-card:hover .kpi-icon-wrap {
-      transform: scale(1.1);
+    /* ════════ RESPONSIVE ════════ */
+    @media (max-width: 1100px) {
+      .bento { grid-template-columns: repeat(2, 1fr); }
+      .grid-2 { grid-template-columns: 1fr; }
     }
-
-    .kpi-icon-wrap.patients {
-      background: rgba(21, 101, 192, 0.08);
-      color: #1565C0;
-    }
-    .kpi-icon-wrap.beneficiaires {
-      background: rgba(0, 135, 90, 0.08);
-      color: #00875A;
-    }
-    .kpi-icon-wrap.activites {
-      background: rgba(123, 31, 162, 0.08);
-      color: #7B1FA2;
-    }
-    .kpi-icon-wrap.constats {
-      background: rgba(245, 124, 0, 0.08);
-      color: #F57C00;
-    }
-
-    .kpi-content {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-      min-width: 0;
-    }
-
-    .kpi-value {
-      font-family: 'Outfit', sans-serif;
-      font-size: clamp(1.2rem, 2vw, 1.5rem);
-      font-weight: 800;
-      color: var(--csu-text);
-      line-height: 1.1;
-      letter-spacing: -0.02em;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .kpi-label {
-      font-size: 0.8rem;
-      color: var(--csu-text-muted);
-      font-weight: 600;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .kpi-trend {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      font-size: 0.75rem;
-      font-weight: 600;
-      padding: 4px 8px;
-      border-radius: 8px;
-      width: fit-content;
-      white-space: nowrap;
-    }
-
-    .kpi-trend.up {
-      color: #2E7D32;
-      background: rgba(67, 160, 71, 0.08);
-    }
-
-    .kpi-trend.down {
-      color: #C62828;
-      background: rgba(229, 57, 53, 0.08);
-    }
-
-    /* ── Activity Items ── */
-    .activity-item {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 10px 12px;
-      border-radius: 10px;
-      transition: background 0.2s ease;
-    }
-
-    .activity-item:hover {
-      background: var(--csu-border-light);
-    }
-
-    .activity-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--csu-primary);
-      flex-shrink: 0;
-      box-shadow: 0 0 0 3px rgba(0, 135, 90, 0.15);
-    }
-
-    .activity-time {
-      font-size: 0.75rem;
-      font-weight: 600;
-      color: var(--csu-text-muted);
-      background: var(--csu-bg);
-      padding: 4px 8px;
-      border-radius: 6px;
-    }
-
-    .hide-on-mobile {
-      display: flex;
-    }
-
-    /* ── Responsive ── */
-    @media (max-width: 1200px) {
-      .kpi-card {
-        min-width: 180px;
-      }
-    }
-
-    @media (max-width: 992px) {
-      .hide-on-mobile {
-        display: none !important;
-      }
-
-      .csu-page-header {
-        margin-bottom: 1rem;
-      }
-
-      .csu-page-subtitle {
-        display: none;
-      }
-    }
-
     @media (max-width: 576px) {
-      /* Plus de scroll horizontal : grille 2 colonnes qui tient dans l'écran */
-      .kpi-grid-container {
-        overflow-x: visible;
-        padding-bottom: 0;
-      }
-
-      .kpi-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 0.6rem;
-        min-width: 0;
-      }
-
-      /* Cartes horizontales : icône à gauche, chiffre + libellé à droite */
-      .kpi-card {
-        flex-direction: row;
-        align-items: center;
-        gap: 0.6rem;
-        min-width: 0;
-        padding: 0.7rem;
-        border-radius: 12px;
-      }
-
-      .kpi-icon-wrap {
-        width: 38px;
-        height: 38px;
-        border-radius: 10px;
-        flex-shrink: 0;
-      }
-
-      .kpi-icon-wrap svg {
-        width: 18px;
-        height: 18px;
-      }
-
-      .kpi-content {
-        flex: 1;
-        min-width: 0;
-      }
-
-      .kpi-value {
-        font-size: 1.25rem;
-      }
-
-      .kpi-label {
-        font-size: 0.7rem;
-      }
-
-      /* Badge de tendance masqué en mobile pour éviter tout débordement */
-      .kpi-trend {
-        display: none;
-      }
+      .hero { padding: 1.3rem 1.2rem; border-radius: 20px; }
+      .hero-today { width: 100%; height: 86px; flex-direction: row; gap: 12px; border-radius: 16px; }
+      .ht-num { font-size: 2rem; }
+      .ht-lbl { text-align: left; }
+      .bento { grid-template-columns: repeat(2, 1fr); gap: 0.7rem; }
+      .kpi { padding: 1rem; border-radius: 14px; }
+      .kpi-val { font-size: 1.6rem; }
+      .panel { padding: 1.1rem; border-radius: 14px; }
     }
   `]
 })
@@ -490,12 +229,25 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     return 'Bonsoir';
   }
 
+  /** Phrase de synthèse construite à partir des données de l'agent. */
+  get resume(): string {
+    if (!this.stats) return 'Voici votre activité du jour.';
+    const nbJour = this.stats.activitesDuJour?.length || 0;
+    const parts = [
+      `${this.stats.totalPatients} patient${this.stats.totalPatients > 1 ? 's' : ''}`,
+      `${this.stats.totalBeneficiaires} bénéficiaire${this.stats.totalBeneficiaires > 1 ? 's' : ''}`
+    ];
+    const base = 'Votre suivi : ' + parts.join(' · ') + '.';
+    return nbJour > 0
+      ? base + ` ${nbJour} activité${nbJour > 1 ? 's' : ''} prévue${nbJour > 1 ? 's' : ''} aujourd'hui.`
+      : base + " Aucune activité aujourd'hui pour le moment.";
+  }
+
   triggerNewAction(): void {
     window.dispatchEvent(new CustomEvent('csu:open-quick-menu'));
   }
 
   ngOnInit(): void {
-    // Register Chart.js elements
     Chart.register(...registerables);
     this.loadDashboardStats();
   }
@@ -519,11 +271,7 @@ export class DashboardComponent implements OnInit, AfterViewInit {
           totalActivites: 0,
           totalConstats: 0,
           activitesDuJour: [],
-          statistiquesMensuelles: {
-            labels: [],
-            patients: [],
-            enrolements: []
-          }
+          statistiquesMensuelles: { labels: [], patients: [], enrolements: [] }
         };
         this.renderChart();
       }
@@ -539,7 +287,7 @@ export class DashboardComponent implements OnInit, AfterViewInit {
         this.renderChart();
       },
       error: () => {
-        this.renderChart(); // Render using fallback
+        this.renderChart();
       }
     });
   }
@@ -558,19 +306,27 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     const patientsData = this.stats?.statistiquesMensuelles?.patients || [];
     const enrolementsData = this.stats?.statistiquesMensuelles?.enrolements || [];
 
+    // Dégradés verticaux pour un rendu plus moderne
+    const gradPatients = ctx.createLinearGradient(0, 0, 0, 300);
+    gradPatients.addColorStop(0, 'rgba(0,135,90,0.22)');
+    gradPatients.addColorStop(1, 'rgba(0,135,90,0)');
+    const gradEnrol = ctx.createLinearGradient(0, 0, 0, 300);
+    gradEnrol.addColorStop(0, 'rgba(21,101,192,0.18)');
+    gradEnrol.addColorStop(1, 'rgba(21,101,192,0)');
+
     this.chart = new Chart(ctx, {
       type: 'line',
       data: {
         labels,
         datasets: [
           {
-            label: 'Patients Enregistrés',
+            label: 'Patients enregistrés',
             data: patientsData,
             borderColor: '#00875A',
-            backgroundColor: 'rgba(0, 135, 90, 0.08)',
+            backgroundColor: gradPatients,
             fill: true,
             tension: 0.4,
-            borderWidth: 2.5,
+            borderWidth: 3,
             pointRadius: 0,
             pointHoverRadius: 6,
             pointHoverBackgroundColor: '#00875A',
@@ -578,13 +334,13 @@ export class DashboardComponent implements OnInit, AfterViewInit {
             pointHoverBorderWidth: 2
           },
           {
-            label: 'Bénéficiaires Enrôlés',
+            label: 'Bénéficiaires enrôlés',
             data: enrolementsData,
             borderColor: '#1565C0',
-            backgroundColor: 'rgba(21, 101, 192, 0.06)',
+            backgroundColor: gradEnrol,
             fill: true,
             tension: 0.4,
-            borderWidth: 2.5,
+            borderWidth: 3,
             pointRadius: 0,
             pointHoverRadius: 6,
             pointHoverBackgroundColor: '#1565C0',
@@ -596,54 +352,22 @@ export class DashboardComponent implements OnInit, AfterViewInit {
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        interaction: {
-          mode: 'index',
-          intersect: false
-        },
+        interaction: { mode: 'index', intersect: false },
         plugins: {
           legend: {
             position: 'top',
-            labels: {
-              usePointStyle: true,
-              pointStyle: 'circle',
-              padding: 20,
-              font: {
-                family: "'Inter', sans-serif",
-                size: 12,
-                weight: 500
-              }
-            }
+            labels: { usePointStyle: true, pointStyle: 'circle', padding: 20, font: { family: "'Inter', sans-serif", size: 12, weight: 500 } }
           },
           tooltip: {
             backgroundColor: 'rgba(26, 26, 46, 0.9)',
             titleFont: { family: "'Inter', sans-serif", size: 13 },
             bodyFont: { family: "'Inter', sans-serif", size: 12 },
-            padding: 12,
-            cornerRadius: 10,
-            displayColors: true,
-            boxPadding: 4
+            padding: 12, cornerRadius: 10, displayColors: true, boxPadding: 4
           }
         },
         scales: {
-          x: {
-            grid: {
-              display: false
-            },
-            ticks: {
-              font: { family: "'Inter', sans-serif", size: 11 },
-              color: '#9CA3AF'
-            }
-          },
-          y: {
-            beginAtZero: true,
-            grid: {
-              color: 'rgba(0, 0, 0, 0.03)'
-            },
-            ticks: {
-              font: { family: "'Inter', sans-serif", size: 11 },
-              color: '#9CA3AF'
-            }
-          }
+          x: { grid: { display: false }, ticks: { font: { family: "'Inter', sans-serif", size: 11 }, color: '#9CA3AF' } },
+          y: { beginAtZero: true, grid: { color: 'rgba(0, 0, 0, 0.03)' }, ticks: { font: { family: "'Inter', sans-serif", size: 11 }, color: '#9CA3AF' } }
         }
       }
     });
