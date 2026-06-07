@@ -60,6 +60,16 @@ import { PermissionService } from '../../../core/services/permission.service';
           </svg>
         </div>
       </a>
+      <a class="fab-menu-item" (click)="navigateTo('/bons-commande/nouveau')" [style.transition-delay]="'0.24s'">
+        <span class="fab-menu-label">Bon de commande</span>
+        <div class="fab-menu-icon bon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/>
+            <line x1="8" y1="8" x2="16" y2="8"/>
+            <line x1="8" y1="12" x2="16" y2="12"/>
+          </svg>
+        </div>
+      </a>
     </div>
     }
 
@@ -325,6 +335,7 @@ import { PermissionService } from '../../../core/services/permission.service';
     .fab-menu-icon.enrolement { background: linear-gradient(135deg, #00875A, #00C67B); }
     .fab-menu-icon.activite   { background: linear-gradient(135deg, #7B1FA2, #AB47BC); }
     .fab-menu-icon.constat    { background: linear-gradient(135deg, #F57C00, #FFB74D); }
+    .fab-menu-icon.bon        { background: linear-gradient(135deg, #00838F, #26C6DA); }
 
     .fab-menu-item:active .fab-menu-icon {
       transform: scale(0.9);

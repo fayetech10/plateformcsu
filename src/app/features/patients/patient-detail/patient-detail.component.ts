@@ -24,6 +24,12 @@ import Swal from 'sweetalert2';
           <p class="csu-page-subtitle">Dossier N° : {{ patient.numeroDossier }}</p>
         </div>
         <div class="d-flex gap-2">
+          <a [routerLink]="['/patients', patient.id, 'lettre-garantie']" class="csu-btn csu-btn-light">
+            <i class="bi bi-shield-check"></i> Lettre de garantie
+          </a>
+          <a routerLink="/bons-commande/nouveau" [queryParams]="{ patientId: patient.id }" class="csu-btn csu-btn-primary">
+            <i class="bi bi-receipt-cutoff"></i> Bon de commande
+          </a>
           @if (patient && canModify(patient)) {
             <a [routerLink]="['/patients', patient.id, 'modifier']" class="csu-btn csu-btn-secondary">
               <i class="bi bi-pencil-fill"></i> Modifier la Fiche

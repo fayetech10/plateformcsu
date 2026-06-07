@@ -54,6 +54,11 @@ import { AuthService } from '../../../core/services/auth.service';
             <span *ngIf="!collapsed">Constats</span>
           </a>
 
+          <a class="csu-sidebar-link" routerLink="/bons-commande" routerLinkActive="active">
+            <i class="bi bi-receipt-cutoff"></i>
+            <span *ngIf="!collapsed">Bons de commande</span>
+          </a>
+
           <a class="csu-sidebar-link" routerLink="/pointage" routerLinkActive="active">
             <i class="bi bi-clock-history"></i>
             <span *ngIf="!collapsed">Pointage</span>
@@ -97,6 +102,11 @@ import { AuthService } from '../../../core/services/auth.service';
           <a class="csu-sidebar-link" routerLink="/admin/categories" routerLinkActive="active">
             <i class="bi bi-tags"></i>
             <span *ngIf="!collapsed">Catégories</span>
+          </a>
+
+          <a class="csu-sidebar-link" routerLink="/admin/pharmacies" routerLinkActive="active">
+            <i class="bi bi-capsule"></i>
+            <span *ngIf="!collapsed">Pharmacies</span>
           </a>
         </div>
       </div>

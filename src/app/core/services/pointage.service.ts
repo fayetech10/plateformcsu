@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { PointageStatutJour, PointageLigne, PointagesJour, Coordonnees, PointageArriveeResponse } from '../models/pointage.model';
+import { PointageStatutJour, PointageLigne, PointagesJour, Coordonnees, PointageArriveeResponse, PositionResultat } from '../models/pointage.model';
 import { SKIP_LOADER } from '../interceptors/loading.interceptor';
 
 @Injectable({
@@ -22,25 +22,43 @@ export class PointageService {
   }
 
   /**
-   * Récupère la position GPS courante du navigateur.
-   * Renvoie null si refusée / indisponible (le pointage se fera sans contrôle).
+   * Récupère la position GPS courante du navigateur, avec la cause d'échec
+   * éventuelle (refus, indisponible, délai dépassé, non supporté).
    */
-  obtenirPosition(): Promise<Coordonnees | null> {
+  obtenirPositionDetaillee(): Promise<PositionResultat> {
     return new Promise((resolve) => {
       if (typeof navigator === 'undefined' || !navigator.geolocation) {
-        resolve(null);
+        resolve({ coords: null, erreur: 'unsupported' });
         return;
       }
       navigator.geolocation.getCurrentPosition(
         (pos) => resolve({
-          latitude: pos.coords.latitude,
-          longitude: pos.coords.longitude,
-          precision: pos.coords.accuracy
+          coords: {
+            latitude: pos.coords.latitude,
+            longitude: pos.coords.longitude,
+            precision: pos.coords.accuracy
+          },
+          erreur: null
         }),
-        () => resolve(null),
+        (err) => {
+          let erreur: PositionResultat['erreur'] = 'unavailable';
+          if (err.code === err.PERMISSION_DENIED) erreur = 'denied';
+          else if (err.code === err.TIMEOUT) erreur = 'timeout';
+          else if (err.code === err.POSITION_UNAVAILABLE) erreur = 'unavailable';
+          resolve({ coords: null, erreur });
+        },
         { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
       );
     });
+  }
+
+  /**
+   * Récupère la position GPS courante du navigateur.
+   * Renvoie null si refusée / indisponible.
+   */
+  async obtenirPosition(): Promise<Coordonnees | null> {
+    const res = await this.obtenirPositionDetaillee();
+    return res.coords;
   }
 
   pointerDepart(coords?: Coordonnees): Observable<PointageArriveeResponse & { heureDepart: string }> {

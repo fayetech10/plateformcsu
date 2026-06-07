@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { PointageService } from '../../core/services/pointage.service';
 import { AuthService } from '../../core/services/auth.service';
-import { PointageStatutJour, PointageLigne, PointagesJour } from '../../core/models/pointage.model';
+import { PointageStatutJour, PointageLigne, PointagesJour, GeoErreur, PointageArriveeResponse } from '../../core/models/pointage.model';
 import { CardListItemComponent } from '../../shared/ui';
 import Swal from 'sweetalert2';
 
@@ -143,6 +143,13 @@ import Swal from 'sweetalert2';
                 </div>
               }
             </div>
+
+            @if (!statut?.aPointeDepart) {
+              <div class="geo-hint mt-3">
+                <i class="bi bi-geo-alt-fill"></i>
+                <span>Le pointage nécessite votre <b>localisation</b> et doit être effectué <b>depuis votre bureau</b>. Activez le GPS avant de pointer.</span>
+              </div>
+            }
           </div>
         </div>
 
@@ -219,6 +226,8 @@ import Swal from 'sweetalert2';
     .btn-depart:hover { background: #E65100; }
     .all-done { padding: 1rem; border-radius: 12px; background: rgba(0,135,90,0.08); color: #2E7D32; font-weight: 600; }
     .all-done i { font-size: 1.4rem; display: block; margin-bottom: 4px; }
+    .geo-hint { display: flex; align-items: flex-start; gap: 8px; text-align: left; padding: 10px 12px; border-radius: 10px; background: rgba(2,136,209,0.07); border: 1px solid rgba(2,136,209,0.2); color: #0277BD; font-size: 0.8rem; line-height: 1.35; }
+    .geo-hint i { font-size: 0.95rem; margin-top: 1px; }
     .tag { font-size: 0.72rem; font-weight: 700; padding: 3px 10px; border-radius: 20px; background: rgba(0,0,0,0.06); color: #6B7280; }
     .tag.en-service { background: rgba(2,136,209,0.12); color: #0277BD; }
 
@@ -306,49 +315,108 @@ export class PointageComponent implements OnInit, OnDestroy {
     });
   }
 
+  /** Instructions d'activation de la localisation (mobile + ordinateur). */
+  private readonly aideActiverLocalisation =
+    "Sur mobile : activez le GPS, puis autorisez la localisation pour ce site. " +
+    "Sur ordinateur : cliquez sur l'icône 🔒 dans la barre d'adresse → Localisation → Autoriser, puis réessayez.";
+
   async pointerArrivee(): Promise<void> {
     this.busy = true;
-    const coords = await this.pointageService.obtenirPosition();
-    this.pointageService.pointerArrivee(coords || undefined).subscribe({
+    const pos = await this.pointageService.obtenirPositionDetaillee();
+    this.pointageService.pointerArrivee(pos.coords || undefined).subscribe({
       next: (res) => {
         this.busy = false;
-        if (res.positionVerifiee === false) {
-          Swal.fire({ icon: 'info', title: 'Arrivée enregistrée', text: `Heure : ${res.heureArrivee} — position non vérifiée.`, timer: 2500, showConfirmButton: false });
-        } else {
-          Swal.fire({ icon: 'success', title: 'Arrivée enregistrée', text: `Heure : ${res.heureArrivee}`, timer: 2000, showConfirmButton: false });
-        }
+        this.afficherSucces(res, res.heureArrivee, 'Arrivée');
         this.loadStatut(); this.loadHistory();
       },
       error: (err) => {
         this.busy = false;
-        const horsZone = err?.error?.horsZone === true;
-        Swal.fire({
-          icon: 'error',
-          title: horsZone ? 'Pointage refusé' : 'Impossible',
-          text: err?.error?.message || 'Erreur lors du pointage.'
-        });
+        this.afficherRefus(err, pos.erreur);
       }
     });
   }
 
   async pointerDepart(): Promise<void> {
     this.busy = true;
-    const coords = await this.pointageService.obtenirPosition();
-    this.pointageService.pointerDepart(coords || undefined).subscribe({
+    const pos = await this.pointageService.obtenirPositionDetaillee();
+    this.pointageService.pointerDepart(pos.coords || undefined).subscribe({
       next: (res) => {
         this.busy = false;
-        Swal.fire({ icon: 'success', title: 'Départ enregistré', text: `Heure : ${res.heureDepart}`, timer: 2000, showConfirmButton: false });
+        this.afficherSucces(res, res.heureDepart, 'Départ');
         this.loadStatut(); this.loadHistory();
       },
       error: (err) => {
         this.busy = false;
-        const horsZone = err?.error?.horsZone === true;
-        Swal.fire({
-          icon: 'error',
-          title: horsZone ? 'Pointage refusé' : 'Impossible',
-          text: err?.error?.message || 'Erreur lors du pointage.'
-        });
+        this.afficherRefus(err, pos.erreur);
       }
     });
+  }
+
+  /** Affiche la confirmation de pointage (succès ou succès sans contrôle de zone). */
+  private afficherSucces(res: PointageArriveeResponse, heure: string, libelle: string): void {
+    if (res.positionVerifiee === false) {
+      Swal.fire({
+        icon: 'info',
+        title: `${libelle} enregistré(e)`,
+        text: `Heure : ${heure} — position non vérifiée (contrôle de zone non configuré pour votre bureau).`,
+        timer: 2800, showConfirmButton: false
+      });
+    } else {
+      Swal.fire({
+        icon: 'success',
+        title: `${libelle} enregistré(e)`,
+        html: `Heure : <b>${heure}</b>` + (res.distanceMetres != null ? `<br><small class="text-muted">À ${res.distanceMetres} m du bureau ✓</small>` : ''),
+        timer: 2200, showConfirmButton: false
+      });
+    }
+  }
+
+  /** Affiche un message de refus clair selon la cause (hors zone, localisation requise…). */
+  private afficherRefus(err: any, geoErreur: GeoErreur | null): void {
+    const e = err?.error || {};
+
+    // Localisation indisponible / refusée → le bureau exige une présence vérifiée
+    if (e.positionRequise === true) {
+      const cause = this.messageGeoErreur(geoErreur);
+      Swal.fire({
+        icon: 'warning',
+        title: 'Localisation requise',
+        html: `${e.message || "Activez la localisation pour pouvoir pointer."}` +
+              (cause ? `<br><br><b>${cause}</b>` : '') +
+              `<br><br><small class="text-muted">${this.aideActiverLocalisation}</small>`,
+        confirmButtonText: 'Réessayer'
+      });
+      return;
+    }
+
+    // Agent hors de la zone autorisée
+    if (e.horsZone === true) {
+      Swal.fire({
+        icon: 'error',
+        title: "Vous n'êtes pas sur le lieu de travail",
+        html: `${e.message || 'Vous êtes trop loin du bureau pour pointer.'}` +
+              `<br><br><small class="text-muted">Le pointage n'est possible que depuis votre bureau.</small>`,
+        confirmButtonText: 'Compris'
+      });
+      return;
+    }
+
+    // Autres erreurs (déjà pointé, réseau, etc.)
+    Swal.fire({
+      icon: 'error',
+      title: 'Pointage impossible',
+      text: e.message || 'Une erreur est survenue lors du pointage. Vérifiez votre connexion et réessayez.'
+    });
+  }
+
+  /** Traduit la cause d'échec GPS en message lisible. */
+  private messageGeoErreur(e: GeoErreur | null): string {
+    switch (e) {
+      case 'denied':      return "Vous avez refusé l'accès à votre position.";
+      case 'unavailable': return 'Votre position est momentanément indisponible.';
+      case 'timeout':     return "Le délai d'obtention de votre position a expiré (signal GPS faible).";
+      case 'unsupported': return "La géolocalisation n'est pas disponible sur cet appareil.";
+      default:            return '';
+    }
   }
 }

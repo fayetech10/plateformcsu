@@ -31,12 +31,22 @@ export interface Coordonnees {
   precision?: number;
 }
 
+/** Raison d'échec de récupération de la position GPS. */
+export type GeoErreur = 'unsupported' | 'denied' | 'unavailable' | 'timeout';
+
+export interface PositionResultat {
+  coords: Coordonnees | null;
+  erreur: GeoErreur | null;
+}
+
 export interface PointageArriveeResponse {
   message: string;
   heureArrivee: string;
   horsZone?: boolean | null;
   positionVerifiee?: boolean | null;
+  positionRequise?: boolean | null;
   distanceMetres?: number | null;
+  rayonMetres?: number | null;
 }
 
 export interface PointagesJour {

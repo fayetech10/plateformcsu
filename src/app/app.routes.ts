@@ -5,6 +5,7 @@ import { PatientListComponent } from './features/patients/patient-list/patient-l
 import { PatientFormComponent } from './features/patients/patient-form/patient-form.component';
 import { PatientDetailComponent } from './features/patients/patient-detail/patient-detail.component';
 import { PatientTypeSelectComponent } from './features/patients/patient-type-select/patient-type-select.component';
+import { LettreGarantieComponent } from './features/patients/lettre-garantie/lettre-garantie.component';
 import { EnrolementListComponent } from './features/enrolements/enrolement-list/enrolement-list.component';
 import { EnrolementFormComponent } from './features/enrolements/enrolement-form/enrolement-form.component';
 import { ActiviteListComponent } from './features/activites/activite-list/activite-list.component';
@@ -18,6 +19,11 @@ import { UtilisateurFormComponent } from './features/admin/utilisateurs/utilisat
 import { BureauListComponent } from './features/admin/bureaux/bureau-list.component';
 import { BureauFormComponent } from './features/admin/bureaux/bureau-form.component';
 import { CategoriesComponent } from './features/admin/categories/categories.component';
+import { PharmacieListComponent } from './features/admin/pharmacies/pharmacie-list.component';
+import { PharmacieFormComponent } from './features/admin/pharmacies/pharmacie-form.component';
+import { BonCommandeListComponent } from './features/bons-commande/bon-commande-list.component';
+import { BonCommandeFormComponent } from './features/bons-commande/bon-commande-form.component';
+import { BonCommandeDetailComponent } from './features/bons-commande/bon-commande-detail.component';
 import { DashboardHomeComponent } from './features/dashboard/dashboard-home.component';
 import { BureauDetailComponent } from './features/admin/bureaux/bureau-detail.component';
 import { PointageComponent } from './features/pointage/pointage.component';
@@ -50,6 +56,7 @@ export const routes: Routes = [
       { path: 'patients/nouveau', component: PatientTypeSelectComponent },
       { path: 'patients/nouveau/formulaire', component: PatientFormComponent },
       { path: 'patients/:id', component: PatientDetailComponent },
+      { path: 'patients/:id/lettre-garantie', component: LettreGarantieComponent },
       { path: 'patients/:id/modifier', component: PatientFormComponent },
       
       // Enrolements
@@ -62,6 +69,12 @@ export const routes: Routes = [
       { path: 'activites/nouveau', component: ActiviteFormComponent },
       { path: 'activites/:id/modifier', component: ActiviteFormComponent },
       
+      // Bons de commande (tous les utilisateurs connectés — usage agent)
+      { path: 'bons-commande', component: BonCommandeListComponent },
+      { path: 'bons-commande/nouveau', component: BonCommandeFormComponent },
+      { path: 'bons-commande/:id', component: BonCommandeDetailComponent },
+      { path: 'bons-commande/:id/modifier', component: BonCommandeFormComponent },
+
       // Constats
       { path: 'constats', component: ConstatListComponent },
       { path: 'constats/nouveau', component: ConstatFormComponent },
@@ -118,11 +131,31 @@ export const routes: Routes = [
         canActivate: [roleGuard], 
         data: { roles: ['ADMIN'] } 
       },
-      { 
-        path: 'admin/categories', 
-        component: CategoriesComponent, 
-        canActivate: [roleGuard], 
-        data: { roles: ['ADMIN'] } 
+      {
+        path: 'admin/categories',
+        component: CategoriesComponent,
+        canActivate: [roleGuard],
+        data: { roles: ['ADMIN'] }
+      },
+
+      // Pharmacies conventionnées (ADMIN)
+      {
+        path: 'admin/pharmacies',
+        component: PharmacieListComponent,
+        canActivate: [roleGuard],
+        data: { roles: ['ADMIN'] }
+      },
+      {
+        path: 'admin/pharmacies/nouvelle',
+        component: PharmacieFormComponent,
+        canActivate: [roleGuard],
+        data: { roles: ['ADMIN'] }
+      },
+      {
+        path: 'admin/pharmacies/:id/modifier',
+        component: PharmacieFormComponent,
+        canActivate: [roleGuard],
+        data: { roles: ['ADMIN'] }
       }
     ]
   },
