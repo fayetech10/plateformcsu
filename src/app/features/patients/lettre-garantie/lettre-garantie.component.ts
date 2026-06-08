@@ -1,6 +1,8 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 import { PatientService } from '../../../core/services/patient.service';
 import { LettreGarantieService } from '../../../core/services/lettre-garantie.service';
 import { Patient } from '../../../core/models/patient.model';
@@ -25,13 +27,21 @@ import Swal from 'sweetalert2';
         <div class="d-flex gap-2 flex-wrap">
           @if (lettre) {
             <button class="csu-btn csu-btn-primary" (click)="imprimer()"><i class="bi bi-printer"></i> Imprimer</button>
+            <button class="csu-btn csu-btn-secondary" (click)="telechargerPDF()" [disabled]="generatingPdf">
+              @if (generatingPdf) { <span class="spinner-border spinner-border-sm me-1"></span> Génération... }
+              @else { <i class="bi bi-file-earmark-pdf"></i> PDF }
+            </button>
           } @else {
             <button class="csu-btn csu-btn-primary" (click)="emettre()" [disabled]="emitting || loading">
               @if (emitting) { <span class="spinner-border spinner-border-sm me-1"></span> Émission… }
               @else { <i class="bi bi-file-earmark-plus"></i> Émettre la lettre }
             </button>
+            <button class="csu-btn csu-btn-secondary" (click)="telechargerPDF()" [disabled]="generatingPdf">
+               @if (generatingPdf) { <span class="spinner-border spinner-border-sm me-1"></span> Génération... }
+               @else { <i class="bi bi-file-earmark-pdf"></i> Aperçu PDF }
+            </button>
           }
-          <a routerLink="/bons-commande/nouveau" [queryParams]="{ patientId: patient.id }" class="csu-btn csu-btn-secondary">
+          <a routerLink="/bons-commande/nouveau" [queryParams]="{ patientId: patient.id }" class="csu-btn csu-btn-light">
             <i class="bi bi-receipt-cutoff"></i> Bon de commande
           </a>
           <a [routerLink]="['/patients', patient.id]" class="csu-btn csu-btn-light">Retour</a>
@@ -54,76 +64,110 @@ import Swal from 'sweetalert2';
             <i class="bi bi-exclamation-triangle-fill"></i>
             <div>
               <b>Aucune lettre de garantie active</b>
-              <span>Émettez une lettre de garantie : elle sera valable <b>2 semaines</b>. Si le patient revient pendant cette période, la même lettre sera réutilisée.</span>
+              <span>Émettez une lettre de garantie : elle sera valable <b>1 mois</b>. Si le patient revient pendant cette période, la même lettre sera réutilisée.</span>
             </div>
           </div>
         }
       </div>
 
-      <!-- Document imprimable -->
-      <div class="csu-card print-area mx-auto" style="max-width: 820px;" [class.draft]="!lettre">
-        <div class="d-flex justify-content-between align-items-start border-bottom pb-3 mb-4">
-          <div class="d-flex align-items-center gap-3">
-            <img src="assets/logo.png" alt="CSU" style="height: 56px;" />
-            <div>
-              <div class="fw-bold fs-5 text-csu-primary">Couverture Sanitaire Universelle</div>
-              <div class="small text-muted">République du Sénégal — Programme CSU</div>
+      <!-- ========== DOCUMENT IMPRIMABLE (format officiel SEN-CSU) ========== -->
+      <div class="lettre-doc print-area mx-auto" [class.draft]="!lettre">
+
+        <!-- En-tête officiel -->
+        <div class="lettre-header">
+          <div class="lettre-header-left">
+            <img src="assets/logo.png" alt="SEN-CSU" class="lettre-logo" />
+            <div class="lettre-agency">
+              <div class="agency-name">AGENCE SÉNÉGALAISE DE LA</div>
+              <div class="agency-name">COUVERTURE SANITAIRE</div>
+              <div class="agency-name">UNIVERSELLE</div>
             </div>
           </div>
-          <div class="text-end">
-            @if (lettre) {
-              <div class="small text-muted">N° Lettre de garantie</div>
-              <div class="fw-bold">{{ lettre.reference }}</div>
-              <div class="small text-muted mt-1">Émise le {{ lettre.dateEmission | date:'dd/MM/yyyy' }}</div>
-            } @else {
-              <div class="small text-muted">N° Dossier</div>
-              <div class="fw-bold">{{ patient.numeroDossier }}</div>
-              <div class="small text-danger mt-1">Brouillon — non émise</div>
-            }
+          <div class="lettre-header-right">
+            <div class="republic-title">REPUBLIQUE DU SENEGAL</div>
+            <div class="republic-motto">UN PEUPLE — UN BUT — UNE FOI</div>
           </div>
         </div>
 
-        <h2 class="text-center fw-bold text-uppercase mb-3" style="letter-spacing:1px;">Lettre de Garantie</h2>
+        <!-- Titre encadré -->
+        <div class="lettre-title-box">
+          <span class="lettre-title">LETTRE DE GARANTIE</span>
+        </div>
 
-        @if (lettre) {
-          <p class="text-center mb-4">
-            <span class="validity-pill">Valable du {{ lettre.dateEmission | date:'dd/MM/yyyy' }} au {{ lettre.dateExpiration | date:'dd/MM/yyyy' }}</span>
-          </p>
-        }
+        <!-- Numéro de référence -->
+        <div class="lettre-ref">
+          N° <span class="dotted-field">{{ lettre ? lettre.reference : '...........................' }}</span>
+        </div>
 
-        <p class="mb-3">
-          Le Bureau de la Couverture Sanitaire Universelle garantit la prise en charge des soins
-          du bénéficiaire désigné ci-après, conformément aux modalités du régime
-          <strong>{{ categorieLabel }}</strong>.
-        </p>
+        <!-- Souche -->
+        <div class="lettre-souche">Souche</div>
 
-        <table class="table table-bordered align-middle mb-4">
-          <tbody>
-            <tr><th style="width:40%" class="table-light">Prénom & Nom</th><td class="fw-semibold">{{ patient.prenom }} {{ patient.nom }}</td></tr>
-            <tr><th class="table-light">Sexe</th><td>{{ patient.sexe === 'M' ? 'Masculin' : 'Féminin' }}</td></tr>
-            <tr><th class="table-light">Date de naissance</th><td>{{ patient.dateNaissance | date:'dd/MM/yyyy' }} ({{ age }} ans)</td></tr>
-            <tr><th class="table-light">Téléphone</th><td>{{ patient.telephone || '-' }}</td></tr>
-            <tr><th class="table-light">Adresse</th><td>{{ patient.adresse || '-' }}<span *ngIf="patient.commune"> — {{ patient.commune }}, {{ patient.region }}</span></td></tr>
-            <tr><th class="table-light">Catégorie de prise en charge</th><td class="fw-semibold">{{ categorieLabel }}</td></tr>
-            <tr *ngIf="patient.numeroMatricule"><th class="table-light">N° Matricule</th><td>{{ patient.numeroMatricule }}</td></tr>
-            <tr *ngIf="patient.service"><th class="table-light">Service / Établissement</th><td>{{ patient.service }}</td></tr>
-          </tbody>
-        </table>
+        <!-- Structure -->
+        <div class="lettre-section">
+          <span class="field-label-bold">STRUCTURE :</span>
+          <span class="dotted-field dotted-long">{{ lettre?.structure || patient.service || '.........................................................................' }}</span>
+        </div>
 
-        <p class="small text-secondary mb-4">
-          La présente lettre de garantie ouvre droit à la prise en charge prévue durant sa période de validité
-          (2 semaines). En cas d'ordonnance dont les médicaments ne sont pas disponibles dans l'établissement,
-          un <strong>bon de commande</strong> est délivré pour acquisition en pharmacie conventionnée.
-        </p>
-
-        <div class="d-flex justify-content-between mt-5 pt-4">
-          <div class="text-center small">
-            <div style="border-top:1px solid #999; width:200px; margin:0 auto; padding-top:4px;">Le Bénéficiaire</div>
+        <!-- Champs du formulaire -->
+        <div class="lettre-fields">
+          <div class="field-row">
+            <span class="field-label">Prénom et nom de l'assuré</span>
+            <span class="dotted-field dotted-long">{{ patient.prenom }} {{ patient.nom }}</span>
           </div>
-          <div class="text-center small">
-            <div style="border-top:1px solid #999; width:200px; margin:0 auto; padding-top:4px;">Cachet & Signature — Bureau CSU</div>
+          <div class="field-row">
+            <span class="field-label">Type d'assuré</span>
+            <span class="dotted-field dotted-long">{{ typeAssureLabel }}</span>
+          </div>
+          <div class="field-row">
+            <span class="field-label">Code assuré/immatriculation</span>
+            <span class="dotted-field dotted-long">{{ codeAssure }}</span>
+          </div>
+          <div class="field-row">
+            <span class="field-label">Date de naissance / Age</span>
+            <span class="dotted-field dotted-long">{{ patient.dateNaissance | date:'dd/MM/yyyy' }} ({{ lettre?.ageBeneficiaire || age }} ans)</span>
+          </div>
+          <div class="field-row">
+            <span class="field-label">Sexe</span>
+            <span class="dotted-field dotted-long">
+              {{ (lettre?.sexeBeneficiaire || patient.sexe) === 'M' ? 'Masculin' : ((lettre?.sexeBeneficiaire || patient.sexe) === 'F' ? 'Féminin' : '-') }}
+            </span>
           </div>
         </div>
+
+        <!-- Motif -->
+        <div class="lettre-section mt-3">
+          <div class="field-row">
+            <span class="field-label">Motif</span>
+            <span class="dotted-field dotted-long">{{ lettre?.motif || patient.diagnosticMotif || '.........................................................................' }}</span>
+          </div>
+        </div>
+
+        <!-- Taux de prise en charge -->
+        <div class="lettre-section mt-4">
+          <div class="field-row">
+            <span class="field-label">Taux de prise en charge</span>
+            <span class="dotted-field dotted-long">{{ lettre?.tauxPriseEnCharge || '80%' }}</span>
+          </div>
+        </div>
+
+        <!-- Date -->
+        <div class="lettre-section mt-4">
+          <div class="field-row">
+            <span class="field-label">Date :</span>
+            <span class="dotted-field">{{ lettre ? (lettre.dateEmission | date:'dd/MM/yyyy') : '..............................' }}</span>
+          </div>
+        </div>
+
+        <!-- Signature et cachet -->
+        <div class="lettre-signature">
+          <span class="signature-label">Signature et cachet</span>
+        </div>
+
+        <!-- Pied de page -->
+        <div class="lettre-footer">
+          Valable pour une période d'un mois à partir de la date de délivrance
+        </div>
+
       </div>
     </div>
   `,
@@ -136,15 +180,119 @@ import Swal from 'sweetalert2';
     .status-banner.active { background: rgba(67,160,71,0.1); border: 1px solid rgba(67,160,71,0.3); color: #1B5E20; }
     .status-banner.none { background: rgba(245,124,0,0.1); border: 1px solid rgba(245,124,0,0.3); color: #E65100; }
 
-    .validity-pill { display: inline-block; font-size: 0.82rem; font-weight: 700; color: #1B5E20; background: rgba(67,160,71,0.12);
-      border: 1px solid rgba(67,160,71,0.3); padding: 4px 14px; border-radius: 20px; }
     .print-area.draft { opacity: 0.85; border: 2px dashed rgba(0,0,0,0.15) !important; }
+
+    /* ========== Lettre de Garantie - Format officiel ========== */
+    .lettre-doc {
+      max-width: 820px;
+      background: #fff;
+      padding: 40px 48px;
+      border-radius: 12px;
+      box-shadow: 0 2px 20px rgba(0,0,0,0.06);
+      font-family: 'Times New Roman', Times, serif;
+      font-size: 14px;
+      color: #222;
+      line-height: 1.7;
+    }
+
+    /* En-tête */
+    .lettre-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 24px;
+    }
+    .lettre-header-left {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .lettre-logo { height: 56px; }
+    .lettre-agency { font-size: 11px; font-weight: 700; line-height: 1.4; text-transform: uppercase; }
+    .agency-name { letter-spacing: 0.3px; }
+    .lettre-header-right { text-align: right; }
+    .republic-title { font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+    .republic-motto { font-size: 12px; margin-top: 4px; font-style: italic; }
+
+    /* Titre encadré */
+    .lettre-title-box {
+      text-align: center;
+      margin: 20px 0 16px;
+    }
+    .lettre-title {
+      display: inline-block;
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      border: 2px solid #333;
+      padding: 6px 28px;
+    }
+
+    /* Référence */
+    .lettre-ref {
+      margin-bottom: 20px;
+      font-size: 14px;
+    }
+
+    /* Souche */
+    .lettre-souche {
+      font-size: 14px;
+      margin-bottom: 16px;
+    }
+
+    /* Section */
+    .lettre-section {
+      margin-bottom: 8px;
+    }
+
+    /* Labels et champs */
+    .field-label-bold { font-weight: 700; font-size: 15px; margin-right: 6px; }
+    .field-label { font-size: 14px; margin-right: 6px; white-space: nowrap; }
+    .field-row {
+      display: flex;
+      align-items: baseline;
+      margin-bottom: 10px;
+    }
+
+    .dotted-field {
+      border-bottom: 1px dotted #666;
+      flex: 1;
+      min-width: 80px;
+      padding-bottom: 1px;
+      font-weight: 600;
+    }
+    .dotted-long { flex: 1; }
+
+    .lettre-fields {
+      margin-top: 12px;
+    }
+
+    /* Signature */
+    .lettre-signature {
+      margin-top: 40px;
+      margin-bottom: 60px;
+    }
+    .signature-label {
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    /* Footer */
+    .lettre-footer {
+      border-top: 1px solid #999;
+      padding-top: 10px;
+      font-size: 13px;
+      font-style: italic;
+      color: #555;
+    }
 
     @media print {
       .no-print { display: none !important; }
-      .print-area { box-shadow: none !important; border: none !important; opacity: 1 !important; }
+      .lettre-doc { box-shadow: none !important; border: none !important; opacity: 1 !important; border-radius: 0; padding: 20px 30px; }
     }
   `]
+
 })
 export class LettreGarantieComponent implements OnInit {
   private route = inject(ActivatedRoute);
@@ -156,6 +304,7 @@ export class LettreGarantieComponent implements OnInit {
   lettre: LettreGarantie | null = null;
   loading = true;
   emitting = false;
+  generatingPdf = false;
 
   private static LABELS: Record<string, string> = {
     'classique': 'Classique',
@@ -191,6 +340,21 @@ export class LettreGarantieComponent implements OnInit {
     return Math.max(0, diff);
   }
 
+  /** Type d'assuré affiché sur la lettre (correspond à la catégorie). */
+  get typeAssureLabel(): string {
+    if (this.lettre?.typeAssure) {
+      const l = LettreGarantieComponent.LABELS[this.lettre.typeAssure];
+      if (l) return l;
+    }
+    return this.categorieLabel;
+  }
+
+  /** Code assuré / immatriculation affiché sur la lettre. */
+  get codeAssure(): string {
+    if (this.lettre?.codeAssureImmatriculation) return this.lettre.codeAssureImmatriculation;
+    return this.patient?.numeroMatricule || this.patient?.numeroCni || '-';
+  }
+
   ngOnInit(): void {
     const id = +this.route.snapshot.paramMap.get('id')!;
     this.patientService.getPatientById(id).subscribe({
@@ -207,8 +371,25 @@ export class LettreGarantieComponent implements OnInit {
 
   private chargerLettreActive(patientId: number): void {
     this.lettreService.getActive(patientId).subscribe({
-      next: (l) => { this.lettre = l && (l as any).id ? l : null; this.loading = false; },
-      error: () => { this.lettre = null; this.loading = false; }
+      next: (l) => { 
+        this.lettre = l && (l as any).id ? l : null; 
+        this.loading = false;
+        // Auto-téléchargement si demandé par l'admin
+        setTimeout(() => {
+          if (this.route.snapshot.queryParamMap.get('downloadPdf') === 'true') {
+            this.telechargerPDF();
+          }
+        }, 500);
+      },
+      error: () => { 
+        this.lettre = null; 
+        this.loading = false; 
+        setTimeout(() => {
+          if (this.route.snapshot.queryParamMap.get('downloadPdf') === 'true') {
+            this.telechargerPDF();
+          }
+        }, 500);
+      }
     });
   }
 
@@ -245,5 +426,34 @@ export class LettreGarantieComponent implements OnInit {
 
   imprimer(): void {
     if (typeof window !== 'undefined') window.print();
+  }
+
+  telechargerPDF(): void {
+    const docElement = document.querySelector('.lettre-doc') as HTMLElement;
+    if (!docElement) return;
+
+    this.generatingPdf = true;
+
+    // Masquer la classe "draft" temporairement pour ne pas imprimer la bordure pointillée
+    const wasDraft = docElement.classList.contains('draft');
+    if (wasDraft) docElement.classList.remove('draft');
+
+    html2canvas(docElement, { scale: 2, useCORS: true }).then(canvas => {
+      if (wasDraft) docElement.classList.add('draft');
+      
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`Lettre_Garantie_${this.lettre?.reference || 'Brouillon'}.pdf`);
+      
+      this.generatingPdf = false;
+    }).catch(err => {
+      this.generatingPdf = false;
+      console.error('Erreur PDF', err);
+    });
   }
 }

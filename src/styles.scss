@@ -1657,3 +1657,40 @@ i.bi {
   }
 }
 
+/* ==============================================
+   Global Print Styles
+   ============================================== */
+@media print {
+  /* Force a desktop-like width so mobile media queries are not triggered */
+  html, body {
+    width: 1024px !important;
+    min-width: 1024px !important;
+    max-width: 1024px !important;
+    background: #fff !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Hide navigation elements globally */
+  .csu-sidebar,
+  .csu-navbar {
+    display: none !important;
+  }
+
+  /* Expand main panel to full width */
+  .csu-main-panel {
+    margin-left: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+  }
+
+  .csu-main-content {
+    margin-top: 0 !important;
+    padding: 0 !important;
+  }
+
+  @page {
+    size: A4;
+    margin: 10mm;
+  }
+}

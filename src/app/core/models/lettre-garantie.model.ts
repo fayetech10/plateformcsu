@@ -5,6 +5,13 @@ export interface LettreGarantie {
   patientNom: string;
   numeroDossier: string;
   categorie?: string | null;
+  structure?: string | null;
+  typeAssure?: string | null;
+  codeAssureImmatriculation?: string | null;
+  ageBeneficiaire?: number | null;
+  sexeBeneficiaire?: string | null;
+  motif?: string | null;
+  tauxPriseEnCharge?: string | null;
   dateEmission: string;
   dateExpiration: string;
   agentId?: number | null;

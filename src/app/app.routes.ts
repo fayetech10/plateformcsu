@@ -141,6 +141,12 @@ export const routes: Routes = [
         canActivate: [roleGuard],
         data: { roles: ['ADMIN'] }
       },
+      {
+        path: 'admin/documents',
+        loadComponent: () => import('./features/admin/documents-generes/documents-generes.component').then(m => m.DocumentsGeneresComponent),
+        canActivate: [roleGuard],
+        data: { roles: ['ADMIN'] }
+      },
 
       // Pharmacies conventionnées (ADMIN)
       {

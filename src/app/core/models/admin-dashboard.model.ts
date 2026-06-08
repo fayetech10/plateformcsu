@@ -14,6 +14,8 @@ export interface AdminDashboardStats {
   totalEnrolements: number;
   totalActivites: number;
   totalConstats: number;
+  totalBonsCommande: number;
+  totalLettresGarantie: number;
 
   derniersUtilisateurs: Array<{
     id: number;
@@ -37,6 +39,8 @@ export interface AdminDashboardStats {
     enrolements: number;
     activites: number;
     constats: number;
+    bonsCommande: number;
+    lettresGarantie: number;
   }>;
 }
 
@@ -50,6 +54,8 @@ export interface AgentStatLigne {
   enrolements: number;
   activites: number;
   constats: number;
+  bonsCommande: number;
+  lettresGarantie: number;
   total: number;
 }
 
@@ -63,6 +69,8 @@ export interface AdminAgentStats {
   totalEnrolements: number;
   totalActivites: number;
   totalConstats: number;
+  totalBonsCommande: number;
+  totalLettresGarantie: number;
   agentTop: string | null;
   agentsSansActivite: number;
 }

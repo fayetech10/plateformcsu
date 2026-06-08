@@ -80,6 +80,28 @@ import Swal from 'sweetalert2';
               }
             </div>
 
+            <!-- Type de circuit (format officiel SEN-CSU) -->
+            <div class="csu-card mb-4">
+              <h4 class="mb-1 text-csu-primary"><i class="bi bi-box-seam me-2"></i> Type de circuit</h4>
+              <p class="small text-muted mb-3">
+                Sélectionnez le type de circuit du médicament.
+              </p>
+              <div class="d-flex gap-4">
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" formControlName="typeCircuit" value="PUBLIQUE" id="circuitPublique" />
+                  <label class="form-check-label" for="circuitPublique">
+                    <strong>Circuit Publique</strong> <span class="text-muted">(PEC 80%)</span>
+                  </label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" formControlName="typeCircuit" value="OFFICINE" id="circuitOfficine" />
+                  <label class="form-check-label" for="circuitOfficine">
+                    <strong>Circuit d'Officine</strong> <span class="text-muted">(PEC 50%)</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
             <!-- Ordonnance médicale -->
             <div class="csu-card mb-4">
               <h4 class="mb-1 text-csu-primary"><i class="bi bi-clipboard2-pulse me-2"></i> Ordonnance médicale</h4>
@@ -96,6 +118,10 @@ import Swal from 'sweetalert2';
                   <input type="date" class="csu-form-control" formControlName="dateOrdonnance" />
                 </div>
                 <div class="col-12 col-md-6">
+                  <label class="csu-form-label">Structure de santé</label>
+                  <input type="text" class="csu-form-control" formControlName="structureSante" placeholder="Ex: Centre de Santé de Pikine" />
+                </div>
+                <div class="col-12 col-md-6">
                   <label class="csu-form-label">Établissement / Service</label>
                   <input type="text" class="csu-form-control" formControlName="serviceHopital" placeholder="Ex: Hôpital Principal — Cardiologie" />
                 </div>
@@ -103,6 +129,10 @@ import Swal from 'sweetalert2';
                   <label class="csu-form-label">Motif du bon</label>
                   <input type="text" class="csu-form-control" formControlName="motif"
                          placeholder="Médicaments non disponibles à l'établissement" />
+                </div>
+                <div class="col-12 col-md-6">
+                  <label class="csu-form-label">Taux de prise en charge</label>
+                  <input type="text" class="csu-form-control" formControlName="tauxPriseEnCharge" placeholder="Ex: 80%" />
                 </div>
               </div>
             </div>
@@ -119,7 +149,7 @@ import Swal from 'sweetalert2';
               <div formArrayName="lignes" class="d-flex flex-column gap-3">
                 @for (ligne of lignes.controls; track $index) {
                   <div [formGroupName]="$index" class="row g-2 align-items-end border-bottom pb-3">
-                    <div class="col-12 col-md-5">
+                    <div class="col-12 col-md-4">
                       <label class="csu-form-label small">Désignation <span class="text-danger">*</span></label>
                       <input type="text" class="csu-form-control" formControlName="designation"
                              placeholder="Ex: Paracétamol 500mg" />
@@ -128,7 +158,11 @@ import Swal from 'sweetalert2';
                       <label class="csu-form-label small">Qté</label>
                       <input type="number" min="1" class="csu-form-control" formControlName="quantite" placeholder="1" />
                     </div>
-                    <div class="col-8 col-md-4">
+                    <div class="col-4 col-md-2">
+                      <label class="csu-form-label small">Prix Unitaire</label>
+                      <input type="number" min="0" step="any" class="csu-form-control" formControlName="prixUnitaire" placeholder="FCFA" />
+                    </div>
+                    <div class="col-4 col-md-3">
                       <label class="csu-form-label small">Posologie / Instructions</label>
                       <input type="text" class="csu-form-control" formControlName="posologie" placeholder="Ex: 1 cp x 3/j" />
                     </div>
@@ -145,10 +179,22 @@ import Swal from 'sweetalert2';
               }
             </div>
 
-            <!-- Observations -->
+            <!-- Montants & Observations -->
             <div class="csu-card mb-4">
-              <h4 class="mb-3 text-csu-primary"><i class="bi bi-chat-left-text me-2"></i> Observations & Statut</h4>
+              <h4 class="mb-3 text-csu-primary"><i class="bi bi-cash-stack me-2"></i> Montants & Suivi</h4>
               <div class="row g-3">
+                <div class="col-12 col-md-4">
+                  <label class="csu-form-label">Montant estimé (FCFA)</label>
+                  <input type="number" min="0" step="any" class="csu-form-control" formControlName="montantEstime" placeholder="Total général" />
+                </div>
+                <div class="col-12 col-md-4">
+                  <label class="csu-form-label">Montant à payer par le patient (FCFA)</label>
+                  <input type="number" min="0" step="any" class="csu-form-control" formControlName="montantPatient" placeholder="Part patient" />
+                </div>
+                <div class="col-12 col-md-4">
+                  <label class="csu-form-label">Montant à facturer au tiers payant (FCFA)</label>
+                  <input type="number" min="0" step="any" class="csu-form-control" formControlName="montantTiersPayant" placeholder="Part tiers payant" />
+                </div>
                 <div class="col-12 col-md-6">
                   <label class="csu-form-label">Statut du bon</label>
                   <select class="csu-form-control csu-form-select" formControlName="statut">
@@ -156,10 +202,6 @@ import Swal from 'sweetalert2';
                       <option [value]="s">{{ statutLabel(s) }}</option>
                     }
                   </select>
-                </div>
-                <div class="col-12 col-md-6">
-                  <label class="csu-form-label">Montant estimé (FCFA)</label>
-                  <input type="number" min="0" step="any" class="csu-form-control" formControlName="montantEstime" placeholder="Optionnel" />
                 </div>
                 <div class="col-12">
                   <label class="csu-form-label">Observations</label>
@@ -267,13 +309,18 @@ export class BonCommandeFormComponent implements OnInit {
     patientNom: [''],
     numeroDossier: [''],
     referenceLettreGarantie: [''],
+    typeCircuit: ['PUBLIQUE'],
+    structureSante: [''],
     medecinPrescripteur: [''],
     serviceHopital: [''],
     dateOrdonnance: [null as string | null],
     motif: ["Médicaments non disponibles à l'établissement de santé"],
+    tauxPriseEnCharge: [''],
     pharmacieId: [null as number | null],
     statut: ['EN_ATTENTE'],
     montantEstime: [null as number | null],
+    montantPatient: [null as number | null],
+    montantTiersPayant: [null as number | null],
     observations: [''],
     lignes: this.fb.array([this.createLigne()])
   });
@@ -431,13 +478,18 @@ export class BonCommandeFormComponent implements OnInit {
           patientNom: bon.patientNom ?? '',
           numeroDossier: bon.numeroDossier ?? '',
           referenceLettreGarantie: bon.referenceLettreGarantie ?? bon.numeroDossier ?? '',
+          typeCircuit: bon.typeCircuit ?? 'PUBLIQUE',
+          structureSante: bon.structureSante ?? '',
           medecinPrescripteur: bon.medecinPrescripteur ?? '',
           serviceHopital: bon.serviceHopital ?? '',
           dateOrdonnance: bon.dateOrdonnance ?? null,
           motif: bon.motif ?? '',
+          tauxPriseEnCharge: bon.tauxPriseEnCharge ?? '',
           pharmacieId: bon.pharmacieId ?? null,
           statut: bon.statut,
           montantEstime: bon.montantEstime ?? null,
+          montantPatient: bon.montantPatient ?? null,
+          montantTiersPayant: bon.montantTiersPayant ?? null,
           observations: bon.observations ?? ''
         });
         this.syncSelectedPharmacie();

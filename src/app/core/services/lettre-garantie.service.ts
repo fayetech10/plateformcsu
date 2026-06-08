@@ -25,6 +25,18 @@ export class LettreGarantieService {
     return this.http.get<LettreGarantie>(`${this.apiUrl}/${id}`);
   }
 
+  /** Liste toutes les lettres avec pagination et recherche. */
+  getLettres(page: number = 0, size: number = 10, search?: string): Observable<any> {
+    let params = new HttpParams()
+      .set('page', page.toString())
+      .set('size', size.toString());
+    
+    if (search) {
+      params = params.set('search', search);
+    }
+    return this.http.get<any>(this.apiUrl, { params });
+  }
+
   /** Émet une lettre (ou réutilise la lettre valide existante). */
   emettre(patientId: number): Observable<EmissionLettre> {
     return this.http.post<EmissionLettre>(`${this.apiUrl}/emettre`, null, {

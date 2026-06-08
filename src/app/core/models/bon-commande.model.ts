@@ -5,6 +5,8 @@ export interface LigneCommande {
   quantite?: number | null;
   posologie?: string | null;
   prixUnitaire?: number | null;
+  total?: number | null;
+  tauxPriseEnCharge?: string | null;
 }
 
 export interface BonCommande {
@@ -23,6 +25,15 @@ export interface BonCommande {
   // Lettre de garantie = dossier patient enregistré
   referenceLettreGarantie?: string | null;
 
+  // Type de circuit (officiel SEN-CSU)
+  typeCircuit?: string | null;  // "PUBLIQUE" (PEC 80%) ou "OFFICINE" (PEC 50%)
+
+  // Infos bénéficiaire (format officiel)
+  codeAssureImmatriculation?: string | null;
+  ageBeneficiaire?: number | null;
+  sexeBeneficiaire?: string | null;
+  structureSante?: string | null;
+
   // Contexte médical (ordonnance)
   medecinPrescripteur?: string | null;
   serviceHopital?: string | null;
@@ -37,6 +48,9 @@ export interface BonCommande {
   statut: StatutBon;
   observations?: string | null;
   montantEstime?: number | null;
+  montantPatient?: number | null;
+  montantTiersPayant?: number | null;
+  tauxPriseEnCharge?: string | null;
 
   lignes: LigneCommande[];
 }

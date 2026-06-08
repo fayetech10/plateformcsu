@@ -86,7 +86,7 @@ type Onglet = 'agents' | 'patients' | 'geo' | 'bureaux' | 'carte' | 'systeme';
                 <div class="csu-card-header"><h3 class="csu-card-title"><i class="bi bi-list-ol text-csu-secondary"></i> Classement détaillé</h3></div>
                 <div class="table-responsive">
                   <table class="csu-table">
-                    <thead><tr><th>Agent</th><th class="text-center">Pat.</th><th class="text-center">Enrôl.</th><th class="text-center">Act.</th><th class="text-center">Const.</th><th class="text-center">Total</th></tr></thead>
+                    <thead><tr><th>Agent</th><th class="text-center">Pat.</th><th class="text-center">Enrôl.</th><th class="text-center">Act.</th><th class="text-center">Const.</th><th class="text-center">Bons</th><th class="text-center">Lettres</th><th class="text-center">Total</th></tr></thead>
                     <tbody>
                       @for (a of agentStats.agents; track a.id) {
                         <tr>
@@ -95,6 +95,8 @@ type Onglet = 'agents' | 'patients' | 'geo' | 'bureaux' | 'carte' | 'systeme';
                           <td class="text-center">{{ a.enrolements }}</td>
                           <td class="text-center">{{ a.activites }}</td>
                           <td class="text-center">{{ a.constats }}</td>
+                          <td class="text-center">{{ a.bonsCommande }}</td>
+                          <td class="text-center">{{ a.lettresGarantie }}</td>
                           <td class="text-center"><span class="total-badge">{{ a.total }}</span></td>
                         </tr>
                       }
@@ -203,7 +205,7 @@ type Onglet = 'agents' | 'patients' | 'geo' | 'bureaux' | 'carte' | 'systeme';
                 </div>
                 <div class="table-responsive">
                   <table class="csu-table">
-                    <thead><tr><th>Bureau</th><th>Agents</th><th class="text-center">Pat.</th><th class="text-center">Enrôl.</th><th class="text-center">Act.</th><th class="text-center">Const.</th></tr></thead>
+                    <thead><tr><th>Bureau</th><th>Agents</th><th class="text-center">Pat.</th><th class="text-center">Enrôl.</th><th class="text-center">Act.</th><th class="text-center">Const.</th><th class="text-center">Bons</th><th class="text-center">Lettres</th></tr></thead>
                     <tbody>
                       @for (b of stats.bureauxStats; track b.id) {
                         <tr>
@@ -213,6 +215,8 @@ type Onglet = 'agents' | 'patients' | 'geo' | 'bureaux' | 'carte' | 'systeme';
                           <td class="text-center">{{ b.enrolements }}</td>
                           <td class="text-center">{{ b.activites }}</td>
                           <td class="text-center">{{ b.constats }}</td>
+                          <td class="text-center">{{ b.bonsCommande }}</td>
+                          <td class="text-center">{{ b.lettresGarantie }}</td>
                         </tr>
                       }
                     </tbody>
@@ -248,6 +252,8 @@ type Onglet = 'agents' | 'patients' | 'geo' | 'bureaux' | 'carte' | 'systeme';
             <div class="stat-kpi"><span class="num">{{ stats.totalEnrolements }}</span><span class="lbl">Enrôlements</span></div>
             <div class="stat-kpi"><span class="num">{{ stats.totalActivites }}</span><span class="lbl">Activités</span></div>
             <div class="stat-kpi"><span class="num">{{ stats.totalConstats }}</span><span class="lbl">Constats</span></div>
+            <div class="stat-kpi"><span class="num">{{ stats.totalBonsCommande }}</span><span class="lbl">Bons de Commande</span></div>
+            <div class="stat-kpi"><span class="num">{{ stats.totalLettresGarantie }}</span><span class="lbl">Lettres de Garantie</span></div>
           </div>
 
           <div class="csu-card">
@@ -510,7 +516,9 @@ export class StatistiquesComponent implements OnInit, OnDestroy {
           { label: 'Patients', data: top.map(a => a.patients), backgroundColor: '#F57C00' },
           { label: 'Enrôlements', data: top.map(a => a.enrolements), backgroundColor: '#00875A' },
           { label: 'Activités', data: top.map(a => a.activites), backgroundColor: '#1565C0' },
-          { label: 'Constats', data: top.map(a => a.constats), backgroundColor: '#7B1FA2' }
+          { label: 'Constats', data: top.map(a => a.constats), backgroundColor: '#7B1FA2' },
+          { label: 'Bons Commande', data: top.map(a => a.bonsCommande), backgroundColor: '#E91E63' },
+          { label: 'Lettres Garantie', data: top.map(a => a.lettresGarantie), backgroundColor: '#00ACC1' }
         ]
       },
       options: {
@@ -533,7 +541,9 @@ export class StatistiquesComponent implements OnInit, OnDestroy {
         labels: data.map(b => b.nom),
         datasets: [
           { label: 'Patients', data: data.map(b => b.patients), backgroundColor: '#00875A' },
-          { label: 'Enrôlements', data: data.map(b => b.enrolements), backgroundColor: '#1565C0' }
+          { label: 'Enrôlements', data: data.map(b => b.enrolements), backgroundColor: '#1565C0' },
+          { label: 'Bons Commande', data: data.map(b => b.bonsCommande), backgroundColor: '#E91E63' },
+          { label: 'Lettres Garantie', data: data.map(b => b.lettresGarantie), backgroundColor: '#00ACC1' }
         ]
       },
       options: {

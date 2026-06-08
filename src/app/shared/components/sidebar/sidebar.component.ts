@@ -94,6 +94,11 @@ import { AuthService } from '../../../core/services/auth.service';
         <div class="csu-sidebar-section" *ngIf="isAdmin">
           <div class="csu-sidebar-section-title" *ngIf="!collapsed">Configuration</div>
 
+          <a class="csu-sidebar-link" routerLink="/admin/documents" routerLinkActive="active">
+            <i class="bi bi-file-earmark-pdf-fill"></i>
+            <span *ngIf="!collapsed">Documents générés</span>
+          </a>
+
           <a class="csu-sidebar-link" routerLink="/admin/utilisateurs" routerLinkActive="active">
             <i class="bi bi-people-fill"></i>
             <span *ngIf="!collapsed">Utilisateurs</span>
