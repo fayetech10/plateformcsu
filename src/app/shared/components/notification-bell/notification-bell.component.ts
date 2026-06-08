@@ -161,7 +161,7 @@ export class NotificationBellComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.notif.start();
-    this.subs.push(this.notif.recent$.subscribe(r => (this.recent = r)));
+    this.subs.push(this.notif.recent$.subscribe(r => (this.recent = r.slice(0, 5))));
     this.subs.push(this.notif.unreadCount$.subscribe(c => (this.unread = c)));
     this.subs.push(this.notif.pendingPermissions$.subscribe(p => (this.pending = p)));
     this.subs.push(this.notif.connected$.subscribe(c => (this.connected = c)));

@@ -88,7 +88,7 @@ export class LiveActivityFeedComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.notif.start();
-    this.subs.push(this.notif.recent$.subscribe(r => (this.events = r.slice(0, 12))));
+    this.subs.push(this.notif.recent$.subscribe(r => (this.events = r.slice(0, 5))));
     this.subs.push(this.notif.connected$.subscribe(c => (this.connected = c)));
   }
 

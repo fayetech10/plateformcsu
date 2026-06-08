@@ -41,4 +41,14 @@ export class EnrolementService {
   updateStatus(id: number, statut: StatutEnrolement, observations?: string): Observable<Enrolement> {
     return this.http.put<Enrolement>(`${this.apiUrl}/${id}/status`, { statut, observations });
   }
+
+  /** Relance la synchronisation de l'enrôlement vers KoboToolbox (Form 1, adhésion familiale). */
+  syncKobo(id: number): Observable<Enrolement> {
+    return this.http.post<Enrolement>(`${this.apiUrl}/${id}/sync-kobo`, {});
+  }
+
+  /** Envoie les personnes à charge vers le formulaire "Rajout de personnes à charge" (Form 2). */
+  syncKoboRajout(id: number): Observable<Enrolement> {
+    return this.http.post<Enrolement>(`${this.apiUrl}/${id}/sync-kobo-rajout`, {});
+  }
 }

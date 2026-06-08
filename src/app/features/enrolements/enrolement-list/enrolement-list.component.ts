@@ -65,6 +65,7 @@ import Swal from 'sweetalert2';
                 <th>Bureau CSU</th>
                 <th>Agent</th>
                 <th>Statut</th>
+                <th>Kobo</th>
                 <th class="text-end">Actions</th>
               </tr>
             </thead>
@@ -95,8 +96,28 @@ import Swal from 'sweetalert2';
                       {{ getStatutLabel(e.statut) }}
                     </span>
                   </td>
+                  <td>
+                    <span class="csu-badge"
+                      [class.csu-badge-success]="e.koboSyncStatus === 'SYNCED'"
+                      [class.csu-badge-danger]="e.koboSyncStatus === 'ECHEC'"
+                      [class.csu-badge-primary]="e.koboSyncStatus === 'EN_ATTENTE'"
+                      [class.csu-badge-warning]="!e.koboSyncStatus || e.koboSyncStatus === 'NON_SYNC'"
+                      [title]="e.koboSyncError || ''">
+                      {{ getKoboLabel(e.koboSyncStatus) }}
+                    </span>
+                  </td>
                   <td class="text-end">
                     <div class="d-inline-flex gap-2">
+                      @if (e.koboSyncStatus !== 'SYNCED') {
+                        <button (click)="onSyncKobo(e)" class="csu-btn-icon text-csu-secondary" title="Renvoyer vers Kobo">
+                          <i class="bi bi-arrow-repeat"></i>
+                        </button>
+                      }
+                      @if (e.personnesACharge && e.personnesACharge.length > 0) {
+                        <button (click)="onSyncKoboRajout(e)" class="csu-btn-icon text-csu-primary" title="Envoyer les personnes à charge (Form rajout)">
+                          <i class="bi bi-people"></i>
+                        </button>
+                      }
                       @if (canUpdateStatus(e.statut) && canModify(e)) {
                         <button (click)="onUpdateStatus(e, 'VALIDE')" class="csu-btn-icon text-success" title="Valider l'adhésion">
                           <i class="bi bi-check-circle"></i>
@@ -143,9 +164,15 @@ import Swal from 'sweetalert2';
                 <div class="meta"><span class="meta-label">Date</span><span class="meta-value">{{ e.dateEnrolement | date:'dd/MM/yyyy' }}</span></div>
                 <div class="meta"><span class="meta-label">Bureau</span><span class="meta-value">{{ e.bureauCsuNom || '-' }}</span></div>
                 <div class="meta"><span class="meta-label">Agent</span><span class="meta-value">{{ e.agentNom || '-' }}</span></div>
+                <div class="meta"><span class="meta-label">Kobo</span><span class="meta-value">{{ getKoboLabel(e.koboSyncStatus) }}</span></div>
               </div>
 
               <div class="csu-list-card-actions">
+                @if (e.koboSyncStatus !== 'SYNCED') {
+                  <button (click)="onSyncKobo(e)" class="csu-btn csu-btn-light text-csu-secondary" aria-label="Renvoyer vers Kobo">
+                    <i class="bi bi-arrow-repeat"></i> Kobo
+                  </button>
+                }
                 @if (canUpdateStatus(e.statut) && canModify(e)) {
                   <button (click)="onUpdateStatus(e, 'VALIDE')" class="csu-btn csu-btn-light text-success" aria-label="Valider l'adhésion">
                     <i class="bi bi-check-circle"></i>
@@ -286,6 +313,46 @@ export class EnrolementListComponent implements OnInit {
     if (statut === 'REJETE') return 'Rejeté';
     if (statut === 'SUSPENDU') return 'Suspendu';
     return statut;
+  }
+
+  getKoboLabel(statut?: string): string {
+    if (statut === 'SYNCED') return 'Synchronisé';
+    if (statut === 'ECHEC') return 'Échec';
+    if (statut === 'EN_ATTENTE') return 'En attente';
+    return 'Non sync.';
+  }
+
+  onSyncKobo(enr: Enrolement): void {
+    this.enrolementService.syncKobo(enr.id!).subscribe({
+      next: (updated) => {
+        enr.koboSyncStatus = updated.koboSyncStatus;
+        enr.koboSyncError = updated.koboSyncError;
+        enr.koboUuid = updated.koboUuid;
+        if (updated.koboSyncStatus === 'SYNCED') {
+          Swal.fire({ title: 'Synchronisé', text: "L'enrôlement a été envoyé vers KoboToolbox.", icon: 'success', confirmButtonColor: '#10b981' });
+        } else {
+          Swal.fire({ title: 'Échec de synchronisation', text: updated.koboSyncError || 'La soumission vers Kobo a échoué.', icon: 'error', confirmButtonColor: '#ef4444' });
+        }
+      },
+      error: () => {
+        Swal.fire({ title: 'Erreur', text: 'Impossible de relancer la synchronisation Kobo.', icon: 'error', confirmButtonColor: '#ef4444' });
+      }
+    });
+  }
+
+  onSyncKoboRajout(enr: Enrolement): void {
+    this.enrolementService.syncKoboRajout(enr.id!).subscribe({
+      next: (updated) => {
+        if (updated.koboSyncStatus === 'SYNCED') {
+          Swal.fire({ title: 'Envoyé', text: 'Les personnes à charge ont été envoyées au formulaire de rajout Kobo.', icon: 'success', confirmButtonColor: '#10b981' });
+        } else {
+          Swal.fire({ title: 'Échec', text: updated.koboSyncError || "L'envoi du rajout vers Kobo a échoué.", icon: 'error', confirmButtonColor: '#ef4444' });
+        }
+      },
+      error: () => {
+        Swal.fire({ title: 'Erreur', text: 'Impossible d\'envoyer le rajout vers Kobo.', icon: 'error', confirmButtonColor: '#ef4444' });
+      }
+    });
   }
 
   canUpdateStatus(statut: StatutEnrolement): boolean {
